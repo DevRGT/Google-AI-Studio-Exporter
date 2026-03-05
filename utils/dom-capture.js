@@ -413,6 +413,10 @@
         return turnOrder.length;
     }
 
+    function getCollectedData() {
+        return collectedData;
+    }
+
     // --- Public API ---
 
     window.DOMCapture = {
@@ -424,5 +428,6 @@
         sleep,
         getCollectedCount,
         getTurnCount,
+        getCollectedData,
     };
 })();

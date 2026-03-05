@@ -130,12 +130,12 @@ The error at `content.js:94` (`chrome.runtime.sendMessage`) happens when the ser
 
 ### Tasks
 
-- [ ] **P4.1** — Bundle JSZip library (or use a CDN-compatible approach for MV3)
-- [ ] **P4.2** — Port `processImages()` — download images and add to ZIP
-- [ ] **P4.3** — Port `processFiles()` — download linked files and add to ZIP
-- [ ] **P4.4** — Port `fetchResource()` — download with timeout and progress
-- [ ] **P4.5** — Port `generateMarkdownContent()` with URL replacement (images → local paths)
-- [ ] **P4.6** — Final ZIP generation and download via `chrome.downloads` API
+- [x] **P4.1** — Bundle JSZip library (or use a CDN-compatible approach for MV3)
+- [x] **P4.2** — Port `processImages()` — download images and add to ZIP
+- [x] **P4.3** — Port `processFiles()` — download linked files and add to ZIP
+- [x] **P4.4** — Port `fetchResource()` — download with timeout and progress
+- [x] **P4.5** — Port `generateMarkdownContent()` with URL replacement (images → local paths)
+- [x] **P4.6** — Final ZIP generation and download via `chrome.downloads` API
 
 #### Files
 - **[NEW]** `libs/jszip.min.js` — Bundled JSZip
@@ -158,9 +158,9 @@ The error at `content.js:94` (`chrome.runtime.sendMessage`) happens when the ser
 
 ### Tasks
 
-- [ ] **P5.1** — Add progress feedback for single-export (countdown, scrolling %, packaging %)
-- [ ] **P5.2** — Port the cancel/retry/text-only UX for mid-export interruption (ESC key)
-- [ ] **P5.3** — Better error handling and user-friendly error messages throughout
+- [x] **P5.1** — Add progress feedback for single-export (countdown, scrolling %, packaging %)
+- [x] **P5.2** — Port the cancel/retry/text-only UX for mid-export interruption (ESC key)
+- [x] **P5.3** — Better error handling and user-friendly error messages throughout
 - [ ] **P5.4** — Add a badge or notification count on the extension icon during sync
 - [ ] **P5.5** — Add i18n support (English + Chinese, matching UserScript)
 - [ ] **P5.6** — Update popup UI to show extension status, quick actions, and last sync info

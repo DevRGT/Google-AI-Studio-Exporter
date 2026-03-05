@@ -2,6 +2,7 @@ let bulkSyncBtnOptions = null;
 let overlayDiv = null;
 let keepalivePort = null;
 let singleExportInProgress = false;
+let singleExportAborted = false;
 let preExportDialog = null;
 
 const SETTINGS_KEY = 'exportSettings';
@@ -300,7 +301,10 @@ function showPreExportDialog() {
                             <span>Format</span>
                         </div>
                         <div class="pre-export-row-value">
-                            <span class="pre-export-format-badge">📄 Markdown</span>
+                            <select id="pre-export-format" class="pre-export-select">
+                                <option value="markdown" ${settings.format === 'markdown' ? 'selected' : ''}>📄 Markdown</option>
+                                <option value="zip" ${settings.format === 'zip' ? 'selected' : ''}>📦 ZIP + Attachments</option>
+                            </select>
                         </div>
                     </div>
 
@@ -348,7 +352,7 @@ function showPreExportDialog() {
 
         document.getElementById('pre-export-confirm').addEventListener('click', async () => {
             const updatedSettings = {
-                format: 'markdown',
+                format: document.getElementById('pre-export-format').value,
                 includeThoughts: document.getElementById('pre-export-thoughts').checked,
                 fileNaming: document.getElementById('pre-export-naming').value,
             };
@@ -383,6 +387,7 @@ async function handleSingleExportClick() {
     if (!dialogResult) return; // User cancelled
 
     singleExportInProgress = true;
+    singleExportAborted = false;
     const settings = dialogResult;
 
     // Reset capture state for a fresh export
@@ -463,15 +468,26 @@ async function handleSingleExportClick() {
         // Wait for DOM to stabilize
         await DC.sleep(800);
 
+        // Register ESC handler for mid-export abort
+        const exportEscHandler = (e) => {
+            if (e.key === 'Escape') {
+                singleExportAborted = true;
+                updateSingleExportStatus('⏹️ Stopping... saving captured content.');
+            }
+        };
+        document.addEventListener('keydown', exportEscHandler);
+
         // 3. Scroll-and-capture loop
-        updateSingleExportStatus('Capturing conversation...');
+        updateSingleExportStatus('Capturing conversation... (press ESC to stop)');
 
         let lastScrollTop = -9999;
         let stuckCount = 0;
 
         while (true) {
+            if (singleExportAborted) break;
+
             DC.captureData(scroller);
-            updateSingleExportStatus(`Capturing... (${DC.getCollectedCount()} turns found)`);
+            updateSingleExportStatus(`Capturing... (${DC.getCollectedCount()} turns found) — press ESC to stop`);
 
             scroller.scrollBy({ top: window.innerHeight * 0.7, behavior: 'smooth' });
             await DC.sleep(900);
@@ -486,29 +502,67 @@ async function handleSingleExportClick() {
             lastScrollTop = currentScroll;
         }
 
+        document.removeEventListener('keydown', exportEscHandler);
+
         // 4. Normalize
         DC.normalizeConversation();
 
         // 5. Generate Markdown
         const title = extractDiscussionTitle();
-        updateSingleExportStatus(`Generating export for "${title}"...`);
+        const abortLabel = singleExportAborted ? ' (partial)' : '';
+        updateSingleExportStatus(`Generating export for "${title}"${abortLabel}...`);
 
         const markdown = DC.generateMarkdownExport(title, settings);
 
-        // 6. Download
-        const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const filename = generateFilename(title, settings);
+        // 6. Download — format-aware
+        if (settings.format === 'zip' && window.AttachmentHandler) {
+            // ZIP mode: collect attachment URLs, download, and package
+            updateSingleExportStatus('Preparing ZIP with attachments...');
 
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+            // Collect all attachment URLs from captured data
+            const allAttachments = [];
+            for (const [, item] of DC.getCollectedData()) {
+                if (Array.isArray(item.attachments)) {
+                    allAttachments.push(...item.attachments);
+                }
+            }
+            const uniqueAttachments = [...new Set(allAttachments)];
 
-        updateSingleExportStatus(`✅ Exported ${DC.getTurnCount()} turns to "${filename}"`);
+            const safeName = title.replace(/[/\\?%*:|"<>]/g, '-').trim() || 'Untitled';
+            const zipBlob = await window.AttachmentHandler.packageAsZip(
+                markdown,
+                uniqueAttachments,
+                `${safeName}.md`,
+                (msg) => updateSingleExportStatus(msg)
+            );
+
+            const zipUrl = URL.createObjectURL(zipBlob);
+            const zipFilename = generateFilename(title, settings).replace(/\.md$/, '.zip');
+            const link = document.createElement('a');
+            link.href = zipUrl;
+            link.download = zipFilename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(zipUrl);
+
+            updateSingleExportStatus(`✅ Exported ${DC.getTurnCount()} turns + ${uniqueAttachments.length} attachment(s) to "${zipFilename}"`);
+        } else {
+            // Markdown-only mode
+            const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const filename = generateFilename(title, settings);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            updateSingleExportStatus(`✅ Exported ${DC.getTurnCount()} turns to "${filename}"`);
+        }
         await DC.sleep(3000);
 
     } catch (err) {

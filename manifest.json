@@ -14,7 +14,8 @@
     "permissions": [
         "storage",
         "activeTab",
-        "scripting"
+        "scripting",
+        "downloads"
     ],
     "host_permissions": [
         "https://aistudio.google.com/*"
@@ -25,7 +26,9 @@
                 "https://aistudio.google.com/*"
             ],
             "js": [
+                "libs/jszip.min.js",
                 "utils/dom-capture.js",
+                "utils/attachment-handler.js",
                 "content/content.js"
             ],
             "css": [
