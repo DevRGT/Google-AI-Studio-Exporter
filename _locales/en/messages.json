@@ -1,0 +1,70 @@
+{
+    "extensionName": {
+        "message": "Google AI Studio Exporter",
+        "description": "Extension name"
+    },
+    "extensionDescription": {
+        "message": "Export your Gemini chat history from Google AI Studio — single discussions or bulk export to local files.",
+        "description": "Extension description"
+    },
+    "exportDiscussion": {
+        "message": "📥 Export Discussion",
+        "description": "Single export button text"
+    },
+    "bulkSync": {
+        "message": "🔄 Bulk Sync",
+        "description": "Bulk sync button text"
+    },
+    "exportFormatMarkdown": {
+        "message": "📄 Markdown only",
+        "description": "Markdown export format option"
+    },
+    "exportFormatZip": {
+        "message": "📦 ZIP with attachments",
+        "description": "ZIP export format option"
+    },
+    "includeThoughts": {
+        "message": "Include Gemini Thoughts",
+        "description": "Toggle for including Gemini thoughts in export"
+    },
+    "exportTitle": {
+        "message": "Export Discussion",
+        "description": "Pre-export dialog title"
+    },
+    "cancel": {
+        "message": "Cancel",
+        "description": "Cancel button"
+    },
+    "export": {
+        "message": "📥 Export",
+        "description": "Export button"
+    },
+    "capturing": {
+        "message": "Capturing...",
+        "description": "Status during capture"
+    },
+    "pressEscToStop": {
+        "message": "press ESC to stop",
+        "description": "ESC hint shown during capture"
+    },
+    "exportComplete": {
+        "message": "Export complete!",
+        "description": "Success message"
+    },
+    "exportFailed": {
+        "message": "Export failed",
+        "description": "Error message"
+    },
+    "settingsTitle": {
+        "message": "⚙️ Export Settings",
+        "description": "Options page settings card title"
+    },
+    "folderTitle": {
+        "message": "📁 Export Folder",
+        "description": "Options page folder card title"
+    },
+    "saved": {
+        "message": "✓ Saved",
+        "description": "Save indicator"
+    }
+}

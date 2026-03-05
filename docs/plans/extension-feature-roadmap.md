@@ -161,10 +161,10 @@ The error at `content.js:94` (`chrome.runtime.sendMessage`) happens when the ser
 - [x] **P5.1** — Add progress feedback for single-export (countdown, scrolling %, packaging %)
 - [x] **P5.2** — Port the cancel/retry/text-only UX for mid-export interruption (ESC key)
 - [x] **P5.3** — Better error handling and user-friendly error messages throughout
-- [ ] **P5.4** — Add a badge or notification count on the extension icon during sync
-- [ ] **P5.5** — Add i18n support (English + Chinese, matching UserScript)
-- [ ] **P5.6** — Update popup UI to show extension status, quick actions, and last sync info
-- [ ] **P5.7** — Update README and documentation
+- [x] **P5.4** — Add a badge or notification count on the extension icon during sync
+- [x] **P5.5** — Add i18n support (English + Chinese, matching UserScript)
+- [x] **P5.6** — Update popup UI to show extension status, quick actions, and last sync info
+- [x] **P5.7** — Update README and documentation
 
 #### Files
 - Various existing files
