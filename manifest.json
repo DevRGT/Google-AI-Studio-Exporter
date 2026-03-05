@@ -1,0 +1,41 @@
+{
+    "manifest_version": 3,
+    "name": "Google AI Studio Bulk Exporter",
+    "version": "1.6.0",
+    "description": "Bulk export your Gemini chat history from Google AI Studio directly to your local file system.",
+    "background": {
+        "service_worker": "background/service-worker.js",
+        "type": "module"
+    },
+    "action": {
+        "default_title": "Open Options",
+        "default_popup": "options/options.html"
+    },
+    "permissions": [
+        "storage",
+        "activeTab",
+        "scripting"
+    ],
+    "host_permissions": [
+        "https://aistudio.google.com/*"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://aistudio.google.com/*"
+            ],
+            "js": [
+                "utils/dom-capture.js",
+                "content/content.js"
+            ],
+            "css": [
+                "content/styles.css"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
+    "options_ui": {
+        "page": "options/options.html",
+        "open_in_tab": true
+    }
+}

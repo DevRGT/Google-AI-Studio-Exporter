@@ -1,0 +1,240 @@
+/* ============================================================
+   Bulk Sync Button (Library page)
+   ============================================================ */
+
+.ai-studio-bulk-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 24px;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+    cursor: pointer;
+    z-index: 9999;
+    font-family: "Google Sans", sans-serif;
+    transition: all 0.2s ease;
+}
+
+.ai-studio-bulk-btn:hover {
+    background: #1557b0;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(26, 115, 232, 0.4);
+}
+
+/* ============================================================
+   Single Export Button (Discussion page)
+   ============================================================ */
+
+.ai-studio-export-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: linear-gradient(135deg, #00897b, #00695c);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 137, 123, 0.35);
+    cursor: pointer;
+    z-index: 9999;
+    font-family: "Google Sans", sans-serif;
+    transition: all 0.25s ease;
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.ai-studio-export-btn:hover {
+    background: linear-gradient(135deg, #00695c, #004d40);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 137, 123, 0.45);
+}
+
+.ai-studio-export-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 137, 123, 0.3);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================================
+   Bulk Sync Overlay
+   ============================================================ */
+
+#ai-bulk-sync-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "Google Sans", sans-serif;
+}
+
+.sync-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 480px;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.sync-card h2 {
+    margin-top: 0;
+    color: #202124;
+}
+
+.progress-bar-container {
+    background: #e8eaed;
+    height: 8px;
+    border-radius: 4px;
+    margin: 20px 0;
+    overflow: hidden;
+}
+
+#sync-progress-bar {
+    background: #1a73e8;
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+#sync-status-text {
+    color: #5f6368;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.stats {
+    font-size: 13px;
+    color: #80868b;
+    margin-bottom: 20px;
+}
+
+#sync-abort-btn {
+    background: white;
+    color: #d93025;
+    border: 1px solid #d93025;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+#sync-abort-btn:hover {
+    background: #fce8e6;
+}
+
+/* ============================================================
+   Single Export Overlay
+   ============================================================ */
+
+.ai-export-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "Google Sans", sans-serif;
+    animation: overlayFadeIn 0.3s ease;
+}
+
+@keyframes overlayFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.export-card {
+    background: white;
+    padding: 36px 40px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    animation: cardSlideIn 0.35s ease-out;
+}
+
+@keyframes cardSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.export-card-icon {
+    font-size: 36px;
+    margin-bottom: 8px;
+}
+
+.export-card h2 {
+    margin: 0 0 20px 0;
+    color: #202124;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.export-progress-indicator {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.export-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e8eaed;
+    border-top-color: #00897b;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+#single-export-status {
+    color: #5f6368;
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.5;
+}
