@@ -281,7 +281,9 @@
 
     // --- Markdown export generation ---
 
-    function generateMarkdownExport(title) {
+    function generateMarkdownExport(title, settings = {}) {
+        const includeThoughts = settings.includeThoughts !== false; // default true
+
         let content = `# ${title || 'Google AI Studio Chat History'}\n\n`;
         content += `**Exported:** ${new Date().toLocaleString()}\n\n`;
         content += `**Turns:** ${turnOrder.length}\n\n`;
@@ -292,7 +294,7 @@
             if (!item) continue;
 
             // Thoughts section (before Gemini response)
-            if (item.role === ROLE_GEMINI && item.thoughts) {
+            if (includeThoughts && item.role === ROLE_GEMINI && item.thoughts) {
                 content += `## 💭 Gemini Thoughts\n\n${item.thoughts}\n\n`;
                 content += `---\n\n`;
             }

@@ -2,6 +2,41 @@ let bulkSyncBtnOptions = null;
 let overlayDiv = null;
 let keepalivePort = null;
 let singleExportInProgress = false;
+let preExportDialog = null;
+
+const SETTINGS_KEY = 'exportSettings';
+const DEFAULT_SETTINGS = {
+    format: 'markdown',
+    includeThoughts: true,
+    fileNaming: 'title',
+};
+
+async function loadExportSettings() {
+    try {
+        const result = await chrome.storage.sync.get(SETTINGS_KEY);
+        return { ...DEFAULT_SETTINGS, ...(result[SETTINGS_KEY] || {}) };
+    } catch (e) {
+        return { ...DEFAULT_SETTINGS };
+    }
+}
+
+async function saveExportSettings(settings) {
+    try {
+        await chrome.storage.sync.set({ [SETTINGS_KEY]: settings });
+    } catch (e) {
+        console.warn('Failed to save settings:', e);
+    }
+}
+
+function generateFilename(title, settings) {
+    const safeName = title.replace(/[/\\?%*:|"<>]/g, '-').trim() || 'Untitled';
+    const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    switch (settings.fileNaming) {
+        case 'title_date': return `${safeName}_${date}.md`;
+        case 'date_title': return `${date}_${safeName}.md`;
+        default: return `${safeName}.md`;
+    }
+}
 
 // --- Helpers for safe messaging ---
 function safeSendMessage(message, callback) {
@@ -236,16 +271,119 @@ function removeSingleExportButton() {
     if (btn) btn.remove();
 }
 
+// ============================================================
+// PRE-EXPORT DIALOG
+// ============================================================
+
+function showPreExportDialog() {
+    return new Promise(async (resolve) => {
+        const settings = await loadExportSettings();
+
+        // Remove existing dialog if any
+        const existing = document.getElementById('ai-pre-export-dialog');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'ai-pre-export-dialog';
+        overlay.className = 'ai-pre-export-overlay';
+
+        overlay.innerHTML = `
+            <div class="pre-export-card">
+                <div class="pre-export-header">
+                    <span class="pre-export-icon">📥</span>
+                    <h2>Export Discussion</h2>
+                </div>
+
+                <div class="pre-export-settings">
+                    <div class="pre-export-row">
+                        <div class="pre-export-row-label">
+                            <span>Format</span>
+                        </div>
+                        <div class="pre-export-row-value">
+                            <span class="pre-export-format-badge">📄 Markdown</span>
+                        </div>
+                    </div>
+
+                    <div class="pre-export-row">
+                        <div class="pre-export-row-label">
+                            <span>Include Thoughts</span>
+                            <span class="pre-export-hint">Gemini's thinking process</span>
+                        </div>
+                        <div class="pre-export-row-value">
+                            <label class="pre-export-toggle">
+                                <input type="checkbox" id="pre-export-thoughts" ${settings.includeThoughts ? 'checked' : ''}>
+                                <span class="pre-export-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="pre-export-row">
+                        <div class="pre-export-row-label">
+                            <span>File Name</span>
+                        </div>
+                        <div class="pre-export-row-value">
+                            <select id="pre-export-naming" class="pre-export-select">
+                                <option value="title" ${settings.fileNaming === 'title' ? 'selected' : ''}>Title.md</option>
+                                <option value="title_date" ${settings.fileNaming === 'title_date' ? 'selected' : ''}>Title_Date.md</option>
+                                <option value="date_title" ${settings.fileNaming === 'date_title' ? 'selected' : ''}>Date_Title.md</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pre-export-actions">
+                    <button id="pre-export-cancel" class="pre-export-btn-cancel">Cancel</button>
+                    <button id="pre-export-confirm" class="pre-export-btn-confirm">📥 Export</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        // Wire buttons
+        document.getElementById('pre-export-cancel').addEventListener('click', () => {
+            overlay.remove();
+            resolve(null);
+        });
+
+        document.getElementById('pre-export-confirm').addEventListener('click', async () => {
+            const updatedSettings = {
+                format: 'markdown',
+                includeThoughts: document.getElementById('pre-export-thoughts').checked,
+                fileNaming: document.getElementById('pre-export-naming').value,
+            };
+            await saveExportSettings(updatedSettings);
+            overlay.remove();
+            resolve(updatedSettings);
+        });
+
+        // ESC to cancel
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                document.removeEventListener('keydown', escHandler);
+                overlay.remove();
+                resolve(null);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    });
+}
+
 async function handleSingleExportClick() {
     if (singleExportInProgress) return;
-    singleExportInProgress = true;
 
     const DC = window.DOMCapture;
     if (!DC) {
         alert('Export module not loaded. Please reload the page.');
-        singleExportInProgress = false;
         return;
     }
+
+    // Show pre-export dialog and wait for user confirmation
+    const dialogResult = await showPreExportDialog();
+    if (!dialogResult) return; // User cancelled
+
+    singleExportInProgress = true;
+    const settings = dialogResult;
 
     // Reset capture state for a fresh export
     DC.resetState();
@@ -355,13 +493,12 @@ async function handleSingleExportClick() {
         const title = extractDiscussionTitle();
         updateSingleExportStatus(`Generating export for "${title}"...`);
 
-        const markdown = DC.generateMarkdownExport(title);
+        const markdown = DC.generateMarkdownExport(title, settings);
 
         // 6. Download
         const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
         const url = URL.createObjectURL(blob);
-        const safeName = title.replace(/[/\\?%*:|"<>]/g, '-').trim() || 'Untitled';
-        const filename = `${safeName}.md`;
+        const filename = generateFilename(title, settings);
 
         const link = document.createElement('a');
         link.href = url;

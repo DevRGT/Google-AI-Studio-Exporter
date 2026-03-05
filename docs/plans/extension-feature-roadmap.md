@@ -75,14 +75,14 @@ The error at `content.js:94` (`chrome.runtime.sendMessage`) happens when the ser
 
 ### Tasks
 
-- [ ] **P2.1** — Add export settings to the Options page:
+- [x] **P2.1** — Add export settings to the Options page:
   - Export format: "Markdown only" / "ZIP with attachments"
   - Include Gemini thoughts: Yes / No
   - Include attachments: Yes / No
   - File naming pattern
-- [ ] **P2.2** — Store settings in `chrome.storage.sync`
-- [ ] **P2.3** — Add a pre-export dialog (similar to UserScript's `showModeSelection()`) that shows before both single-export and bulk-export
-- [ ] **P2.4** — Wire settings into the export pipeline
+- [x] **P2.2** — Store settings in `chrome.storage.sync`
+- [x] **P2.3** — Add a pre-export dialog (similar to UserScript's `showModeSelection()`) that shows before both single-export and bulk-export
+- [x] **P2.4** — Wire settings into the export pipeline
 
 #### Files
 - [options.html](file:///Users/regisgesnot/DevProjects/Google-AI-Studio-Exporter/options/options.html) — Add settings UI

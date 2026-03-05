@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Google AI Studio Exporter - Settings</title>
+  <style>
+    body {
+      font-family: "Google Sans", system-ui, -apple-system, sans-serif;
+      padding: 20px;
+      max-width: 640px;
+      margin: 0 auto;
+      line-height: 1.6;
+      background-color: #f0f4f9;
+      color: #1f1f1f;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #1a73e8;
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    .card {
+      background: #fff;
+      padding: 28px 32px;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+      margin-bottom: 20px;
+    }
+
+    .card h2 {
+      margin: 0 0 6px 0;
+      font-size: 16px;
+      font-weight: 500;
+      color: #202124;
+    }
+
+    .card p.subtitle {
+      margin: 0 0 20px 0;
+      color: #5f6368;
+      font-size: 13px;
+    }
+
+    /* Status panel */
+    .status-panel {
+      margin: 16px 0;
+      padding: 14px 16px;
+      border-radius: 10px;
+      background: #e8f0fe;
+      border: 1px solid #d2e3fc;
+      font-size: 14px;
+    }
+
+    .status-panel.error {
+      background: #fce8e6;
+      border-color: #fad2cf;
+      color: #c5221f;
+    }
+
+    .status-panel.success {
+      background: #e6f4ea;
+      border-color: #ceead6;
+      color: #188038;
+    }
+
+    #directoryName {
+      font-weight: 500;
+    }
+
+    /* Buttons */
+    button.primary-btn {
+      background: #1a73e8;
+      color: white;
+      border: none;
+      padding: 10px 22px;
+      font-size: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    button.primary-btn:hover {
+      background: #1557b0;
+      box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+    }
+
+    button.primary-btn:disabled {
+      background: #dadce0;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Settings form */
+    .setting-group {
+      margin-bottom: 20px;
+    }
+
+    .setting-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .setting-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #202124;
+      margin-bottom: 8px;
+    }
+
+    .setting-description {
+      font-size: 12px;
+      color: #80868b;
+      margin-top: 4px;
+    }
+
+    /* Radio group */
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .radio-option:hover {
+      border-color: #c4c4c4;
+      background: #f8f9fa;
+    }
+
+    .radio-option.selected {
+      border-color: #1a73e8;
+      background: #e8f0fe;
+    }
+
+    .radio-option.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .radio-option input[type="radio"] {
+      accent-color: #1a73e8;
+      margin: 0;
+    }
+
+    .radio-option-text {
+      flex: 1;
+    }
+
+    .radio-option-label {
+      font-size: 14px;
+      color: #202124;
+    }
+
+    .radio-option-sublabel {
+      font-size: 12px;
+      color: #80868b;
+    }
+
+    .badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: #e8eaed;
+      color: #5f6368;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* Toggle switch */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+    }
+
+    .toggle-text {
+      font-size: 14px;
+      color: #202124;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #dadce0;
+      transition: 0.2s;
+      border-radius: 12px;
+    }
+
+    .toggle-slider:before {
+      content: "";
+      position: absolute;
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.2s;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-switch input:checked+.toggle-slider {
+      background-color: #1a73e8;
+    }
+
+    .toggle-switch input:checked+.toggle-slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Select */
+    .styled-select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: "Google Sans", system-ui, sans-serif;
+      color: #202124;
+      background: white;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%235f6368' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+
+    .styled-select:focus {
+      outline: none;
+      border-color: #1a73e8;
+    }
+
+    /* Saved indicator */
+    .save-indicator {
+      font-size: 12px;
+      color: #188038;
+      opacity: 0;
+      transition: opacity 0.3s;
+      margin-left: 8px;
+    }
+
+    .save-indicator.visible {
+      opacity: 1;
+    }
+
+    /* Popup warning */
+    .popup-warning {
+      margin-top: 16px;
+      padding: 10px 14px;
+      background: #fff3e0;
+      border: 1px solid #ffe0b2;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #e65100;
+    }
+
+    .popup-warning a {
+      color: #1a73e8;
+      font-weight: 500;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Card 1: Folder Configuration -->
+  <div class="card">
+    <h2>📁 Export Folder</h2>
+    <p class="subtitle">For bulk export, the extension writes files directly to a local folder.</p>
+
+    <div id="statusPanel" class="status-panel">
+      <strong>Status:</strong> <span id="statusText">Checking...</span>
+      <div id="directoryName" style="margin-top: 6px;"></div>
+    </div>
+
+    <button id="selectFolderBtn" class="primary-btn">📁 Select Export Folder</button>
+  </div>
+
+  <!-- Card 2: Export Settings -->
+  <div class="card">
+    <h2>⚙️ Export Settings</h2>
+    <p class="subtitle">Configure how discussions are exported. <span id="saveIndicator" class="save-indicator">✓
+        Saved</span></p>
+
+    <!-- Export Format -->
+    <div class="setting-group">
+      <span class="setting-label">Export Format</span>
+      <div class="radio-group" id="formatRadioGroup">
+        <label class="radio-option selected" data-value="markdown">
+          <input type="radio" name="exportFormat" value="markdown" checked>
+          <div class="radio-option-text">
+            <div class="radio-option-label">📄 Markdown only</div>
+            <div class="radio-option-sublabel">Clean .md file with formatted text</div>
+          </div>
+        </label>
+        <label class="radio-option disabled" data-value="zip">
+          <input type="radio" name="exportFormat" value="zip" disabled>
+          <div class="radio-option-text">
+            <div class="radio-option-label">📦 ZIP with attachments</div>
+            <div class="radio-option-sublabel">Markdown + images and files in a ZIP archive</div>
+          </div>
+          <span class="badge">Phase 4</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Include Thoughts -->
+    <div class="setting-group">
+      <div class="toggle-row">
+        <div>
+          <span class="toggle-text">Include Gemini Thoughts</span>
+          <div class="setting-description">Include the "thinking" process in exported Markdown</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="includeThoughts" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- File Naming -->
+    <div class="setting-group">
+      <span class="setting-label">File Naming</span>
+      <select class="styled-select" id="fileNaming">
+        <option value="title">Discussion Title.md</option>
+        <option value="title_date">Discussion Title_2026-03-05.md</option>
+        <option value="date_title">2026-03-05_Discussion Title.md</option>
+      </select>
+      <div class="setting-description">Pattern used for downloaded file names</div>
+    </div>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+
+</html>
