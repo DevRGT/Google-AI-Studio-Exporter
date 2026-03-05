@@ -11,3 +11,4 @@ backup/
 
 # Logs
 *.log
+.tmp/
