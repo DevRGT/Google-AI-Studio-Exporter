@@ -104,12 +104,12 @@ The error at `content.js:94` (`chrome.runtime.sendMessage`) happens when the ser
 
 ### Tasks
 
-- [ ] **P3.1** — Port the DOM-based `captureData()` with proper role detection (`data-turn-role`, `model-prompt-container`, etc.)
-- [ ] **P3.2** — Port Gemini thoughts extraction (`ms-thought-chunk`)
-- [ ] **P3.3** — Port the turn ordering logic (`updateTurnOrder`, `mergeWithOverlap`)
-- [ ] **P3.4** — Port the conversation normalization (`normalizeConversation()` — merge thoughts-only entries)
-- [ ] **P3.5** — Port attachment link extraction (`extractDownloadLinksFromTurn`)
-- [ ] **P3.6** — Improve the `extractJsonFromHtml()` in `markdown-parser.js` for bulk export (current regex approach is fragile)
+- [x] **P3.1** — Port the DOM-based `captureData()` with proper role detection (`data-turn-role`, `model-prompt-container`, etc.)
+- [x] **P3.2** — Port Gemini thoughts extraction (`ms-thought-chunk`)
+- [x] **P3.3** — Port the turn ordering logic (`updateTurnOrder`, `mergeWithOverlap`)
+- [x] **P3.4** — Port the conversation normalization (`normalizeConversation()` — merge thoughts-only entries)
+- [x] **P3.5** — Port attachment link extraction (`extractDownloadLinksFromTurn`)
+- [x] **P3.6** — Improve the `extractJsonFromHtml()` in `markdown-parser.js` for bulk export (current regex approach is fragile)
 
 #### Files
 - [content.js](file:///Users/regisgesnot/DevProjects/Google-AI-Studio-Exporter/content/content.js) — Core capture logic
