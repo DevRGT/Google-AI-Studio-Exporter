@@ -641,18 +641,26 @@ function showProgressOverlay(total) {
         overlayDiv.id = 'ai-bulk-sync-overlay';
 
         overlayDiv.innerHTML = `
-            <div class="sync-card">
-                <h2>Bulk Syncing...</h2>
-                <div class="progress-bar-container">
-                    <div id="sync-progress-bar" style="width: 0%"></div>
+            <div class="sync-card" style="max-width: 600px; width: 90%;">
+                <h2 style="margin-top: 0; margin-bottom: 12px; font-size: 20px;">Bulk Syncing...</h2>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #5f6368;">
+                    <span id="sync-progress-text">Preparing...</span>
+                    <span><strong id="sync-processed">0</strong> / ${total} items</span>
                 </div>
-                <p id="sync-status-text">Starting sync for ${total} items...</p>
-                <div class="stats">
-                    <span id="sync-downloaded">0</span> Downloaded | 
-                    <span id="sync-skipped">0</span> Skipped | 
-                    <span id="sync-errors-count">0</span> Errors
+                <div class="progress-bar-container" style="background: #e8eaed; border-radius: 4px; height: 8px; overflow: hidden; margin-bottom: 16px;">
+                    <div id="sync-progress-bar" style="width: 0%; height: 100%; background: #1a73e8; transition: width 0.3s ease;"></div>
                 </div>
-                <button id="sync-abort-btn">Abort (ESC)</button>
+                <div class="stats" style="display: flex; gap: 16px; margin-bottom: 16px; font-size: 14px; font-weight: 500;">
+                    <div style="color: #188038;">📥 <span id="sync-downloaded">0</span> Downloaded</div>
+                    <div style="color: #5f6368;">⏭️ <span id="sync-skipped">0</span> Skipped</div>
+                    <div style="color: #d93025;">❌ <span id="sync-errors-count">0</span> Errors</div>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <div style="font-size: 12px; font-weight: 600; color: #5f6368; margin-bottom: 4px;">Sync Log (Export Report):</div>
+                    <div id="sync-log" style="height: 180px; overflow-y: auto; background: #f8f9fa; border: 1px solid #dadce0; border-radius: 4px; padding: 8px; font-family: monospace; font-size: 12px; color: #202124; white-space: pre-wrap; line-height: 1.4;"></div>
+                </div>
+                <button id="sync-abort-btn" style="background: white; border: 1px solid #dadce0; color: #5f6368; padding: 6px 16px; border-radius: 4px; cursor: pointer; float: right;">Abort (ESC)</button>
+                <div style="clear: both;"></div>
             </div>
         `;
         document.body.appendChild(overlayDiv);
@@ -679,12 +687,41 @@ function hideProgressOverlay() {
 function updateProgressUI(payload) {
     if (!overlayDiv) return;
 
-    const { state, processed, total, message, downloaded, skipped, errors } = payload;
+    const { state, processed, total, message, downloaded, skipped, errors, logEntry, logType } = payload;
 
-    const statusText = document.getElementById('sync-status-text');
+    const progressText = document.getElementById('sync-progress-text');
     const progressBar = document.getElementById('sync-progress-bar');
+    const logArea = document.getElementById('sync-log');
 
-    statusText.textContent = message;
+    if (message && progressText) {
+        progressText.textContent = message;
+    }
+
+    if (processed !== undefined && document.getElementById('sync-processed')) {
+        document.getElementById('sync-processed').textContent = processed;
+    }
+
+    if (downloaded !== undefined && document.getElementById('sync-downloaded')) {
+        document.getElementById('sync-downloaded').textContent = downloaded;
+    }
+    if (skipped !== undefined && document.getElementById('sync-skipped')) {
+        document.getElementById('sync-skipped').textContent = skipped;
+    }
+    if (errors !== undefined && document.getElementById('sync-errors-count')) {
+        document.getElementById('sync-errors-count').textContent = errors;
+    }
+
+    if (logEntry && logArea) {
+        const div = document.createElement('div');
+        div.textContent = logEntry;
+        if (logType === 'success') div.style.color = '#188038';
+        else if (logType === 'skip') div.style.color = '#5f6368';
+        else if (logType === 'error') div.style.color = '#d93025';
+        else div.style.color = '#202124'; // info
+
+        logArea.appendChild(div);
+        logArea.scrollTop = logArea.scrollHeight;
+    }
 
     if (state === 'PROGRESS' && processed && total) {
         const percent = (processed / total) * 100;
@@ -692,22 +729,22 @@ function updateProgressUI(payload) {
     } else if (state === 'FINISHED') {
         progressBar.style.width = '100%';
         progressBar.style.backgroundColor = '#188038';
-        document.getElementById('sync-downloaded').textContent = downloaded;
-        document.getElementById('sync-skipped').textContent = skipped;
-        document.getElementById('sync-errors-count').textContent = errors;
+        document.getElementById('sync-abort-btn').textContent = 'Close';
+        document.getElementById('sync-abort-btn').onclick = () => { overlayDiv.style.display = 'none'; };
+        // Don't auto-hide so user can read log
         releaseKeepalive();
-        hideProgressOverlay();
     } else if (state === 'ERROR' || state === 'ABORTED') {
-        progressBar.style.backgroundColor = '#c5221f';
+        progressBar.style.backgroundColor = '#d93025';
+        document.getElementById('sync-abort-btn').textContent = 'Close';
+        document.getElementById('sync-abort-btn').onclick = () => { overlayDiv.style.display = 'none'; };
         releaseKeepalive();
-        setTimeout(() => { overlayDiv.style.display = 'none'; }, 5000);
     }
 }
 
 function abortSync() {
     safeSendMessage({ action: 'ABORT_SYNC' }, () => {
-        const statusText = document.getElementById('sync-status-text');
-        if (statusText) statusText.textContent = 'Aborting...';
+        const progressText = document.getElementById('sync-progress-text');
+        if (progressText) progressText.textContent = 'Aborting...';
         releaseKeepalive();
     });
 }

@@ -83,30 +83,34 @@ async function startBulkSync(items, tabId) {
 
         for (const item of items) {
             if (abortController.signal.aborted) {
-                sendUpdate({ state: 'ABORTED', message: 'Sync cancelled by user.' });
+                sendUpdate({ state: 'ABORTED', message: 'Sync cancelled by user.', processed, total, downloaded, skipped, errors });
                 break;
             }
 
             processed++;
             const { id, title, timestamp } = item;
 
+            const sendProgress = (msg, logEntry, logType) => {
+                sendUpdate({ state: 'PROGRESS', processed, total, message: msg, downloaded, skipped, errors, logEntry, logType });
+                setBadge(`${processed}`);
+            };
+
             // 3. Check differential registry
             const shouldExport = await needsExport(id, timestamp);
             if (!shouldExport) {
                 skipped++;
-                sendUpdate({ state: 'PROGRESS', processed, total, message: `Skipped (no changes): ${title}` });
+                sendProgress(`Skipped (no changes): ${title}`, `⏭️ Skipped: ${title} (No changes since last export)`, 'skip');
                 continue;
             }
 
-            sendUpdate({ state: 'PROGRESS', processed, total, message: `Fetching: ${title}` });
-            setBadge(`${processed}`);
+            sendProgress(`Fetching: ${title}`, `\n📥 Fetching: ${title}`, 'info');
 
             // 4. Fetch the data from Google's API
             // The exact API endpoint format from the original script UI interception
             try {
                 // Determine sleep time (polite 3s - 5s)
                 const delayMs = Math.floor(Math.random() * 2000) + 3000;
-                sendUpdate({ state: 'PROGRESS', processed, total, message: `Sleeping for ${delayMs / 1000}s before fetching ${title}...` });
+                sendProgress(`Sleeping for ${(delayMs / 1000).toFixed(1)}s before fetching ${title}...`);
                 await sleep(delayMs);
 
                 if (abortController.signal.aborted) break;
@@ -133,16 +137,23 @@ async function startBulkSync(items, tabId) {
                 // 6. Update Registry
                 await markAsExported(id, timestamp);
                 downloaded++;
+                sendProgress(`Downloaded: ${title}`, `✅ Success: Saved as ${filename}`, 'success');
 
             } catch (err) {
                 console.error(`Failed to export ${id}:`, err);
                 errors++;
-                sendUpdate({ state: 'PROGRESS', processed, total, message: `Error on ${title}: ${err.message}` });
+                sendProgress(`Error on ${title}: ${err.message}`, `❌ Error: Failed to export ${title} - ${err.message}`, 'error');
             }
         }
 
         if (!abortController.signal.aborted) {
-            sendUpdate({ state: 'FINISHED', downloaded, skipped, errors, message: `Sync complete! Downloaded: ${downloaded}, Skipped: ${skipped}, Errors: ${errors}` });
+            sendUpdate({
+                state: 'FINISHED',
+                processed, total, downloaded, skipped, errors,
+                message: `Sync complete! Downloaded: ${downloaded}, Skipped: ${skipped}, Errors: ${errors}`,
+                logEntry: `\n🎉 Sync Finished! Summary: ${downloaded} Downloaded, ${skipped} Skipped, ${errors} Errors.`,
+                logType: 'success'
+            });
         }
 
     } catch (err) {
