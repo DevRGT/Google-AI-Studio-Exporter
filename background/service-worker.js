@@ -134,7 +134,7 @@ async function startBulkSync(items, tabId) {
 
                 if (abortController?.signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
-                const url = `https://aistudio.google.com/app/prompts/${id}`;
+                const url = `https://aistudio.google.com/app/prompts/${id}#gas-exporter-active`;
 
                 // --- DEDICATED WINDOW ---
                 // Open each discussion in its own browser window.

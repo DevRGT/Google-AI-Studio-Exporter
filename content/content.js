@@ -4,6 +4,7 @@ let keepalivePort = null;
 let singleExportInProgress = false;
 let singleExportAborted = false;
 let preExportDialog = null;
+let warningOverlayEl = null;
 
 const SETTINGS_KEY = 'exportSettings';
 const DEFAULT_SETTINGS = {
@@ -57,6 +58,29 @@ function safeSendMessage(message, callback) {
         console.error('Extension context lost:', e);
         showContextInvalidatedError();
         if (callback) callback(null);
+    }
+}
+
+function showWarningOverlay() {
+    if (document.getElementById('gas-exporter-warning')) return;
+    warningOverlayEl = document.createElement('div');
+    warningOverlayEl.id = 'gas-exporter-warning';
+    warningOverlayEl.className = 'gas-exporter-warning-overlay';
+    warningOverlayEl.innerHTML = `
+        <div class="gas-exporter-warning-overlay-title">⚠️ EXPERIMENTAL EXPORT IN PROGRESS ⚠️</div>
+        <div>Please <b>DO NOT</b> minimize, hide, or switch away from this tab!</div>
+        <div>Google AI Studio may freeze the export if this tab loses visibility.</div>
+    `;
+    document.body.appendChild(warningOverlayEl);
+}
+
+function removeWarningOverlay() {
+    if (warningOverlayEl && warningOverlayEl.parentNode) {
+        warningOverlayEl.parentNode.removeChild(warningOverlayEl);
+        warningOverlayEl = null;
+    } else {
+        const el = document.getElementById('gas-exporter-warning');
+        if (el) el.remove();
     }
 }
 
@@ -127,6 +151,9 @@ function isLibraryPage() {
 // --- Inject CSS and setup observer ---
 
 function initContentScript() {
+    if (window.location.hash === '#gas-exporter-active') {
+        showWarningOverlay();
+    }
     const observer = new MutationObserver((mutations) => {
         if (isLibraryPage()) {
             injectBulkSyncButton();
@@ -768,30 +795,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         async function performScrape() {
             let incomplete = false;
-            let overlayEl = null;
             const debugLog = []; // Collects debug info per iteration
 
-            const showWarningOverlay = () => {
-                if (document.getElementById('gas-exporter-warning')) return;
-                overlayEl = document.createElement('div');
-                overlayEl.id = 'gas-exporter-warning';
-                overlayEl.className = 'gas-exporter-warning-overlay';
-                overlayEl.innerHTML = `
-                    <div class="gas-exporter-warning-overlay-title">⚠️ EXPERIMENTAL EXPORT IN PROGRESS ⚠️</div>
-                    <div>Please <b>DO NOT</b> minimize, hide, or switch away from this tab!</div>
-                    <div>Google AI Studio may freeze the export if this tab loses visibility.</div>
-                `;
-                document.body.appendChild(overlayEl);
-            };
-
-            const removeWarningOverlay = () => {
-                if (overlayEl && overlayEl.parentNode) {
-                    overlayEl.parentNode.removeChild(overlayEl);
-                }
-            };
-
             try {
-                if (bulkMode) showWarningOverlay();
+                showWarningOverlay();
 
                 // Wait for the main container to exist
                 let retries = 0;
