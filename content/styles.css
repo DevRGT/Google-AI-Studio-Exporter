@@ -438,3 +438,55 @@
     background: linear-gradient(135deg, #00695c, #004d40);
     box-shadow: 0 3px 10px rgba(0, 137, 123, 0.4);
 }
+
+/* ============================================================
+   Warning Overlay (Non-blocking)
+   ============================================================ */
+
+.gas-exporter-warning-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(211, 47, 47, 0.85);
+    /* Material Red, Translucent */
+    backdrop-filter: blur(6px);
+    /* Awesome glass effect so they see the scroll */
+    color: white;
+    padding: 30px 40px;
+    border-radius: 16px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+    z-index: 9999999;
+    /* Higher than Google AI studio Modals */
+    pointer-events: none;
+    /* CRITICAL: Do not block clicks! */
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: gas-fade-zoom-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.gas-exporter-warning-overlay-title {
+    font-size: 24px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes gas-fade-zoom-in {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}

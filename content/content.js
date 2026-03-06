@@ -103,45 +103,13 @@ function establishKeepalive() {
         keepalivePort = null;
     }
 }
-// Silent audio to prevent macOS App Nap on the library tab during bulk export
-let audioKeepAlive = null;
-
-function startAudioKeepAlive() {
-    if (audioKeepAlive) return;
-    try {
-        const audio = document.createElement('audio');
-        audio.id = '__library_keepalive_audio';
-        audio.src = chrome.runtime.getURL('assets/silence.wav');
-        audio.loop = true;
-        audio.volume = 0.05;
-        document.body.appendChild(audio);
-        audio.play().then(() => {
-            console.log('[Export] Audio keepalive started (playing silent MP3)');
-        }).catch((e) => {
-            console.warn('[Export] Audio keepalive play failed:', e);
-        });
-        audioKeepAlive = audio;
-    } catch (e) {
-        console.warn('[Export] Audio keepalive failed:', e);
-    }
-}
-
-function stopAudioKeepAlive() {
-    if (audioKeepAlive) {
-        try {
-            audioKeepAlive.pause();
-            audioKeepAlive.remove();
-        } catch (e) { /* ignore */ }
-        audioKeepAlive = null;
-    }
-}
+// Keepalive: content script connects a port to prevent idle shutdown during sync
 
 function releaseKeepalive() {
     if (keepalivePort) {
         try { keepalivePort.disconnect(); } catch (e) { /* ignore */ }
         keepalivePort = null;
     }
-    stopAudioKeepAlive();
 }
 
 // --- Page detection ---
@@ -271,7 +239,6 @@ function handleBulkSyncClick() {
     showProgressOverlay(itemsToSync.length);
 
     establishKeepalive();
-    startAudioKeepAlive();
 
     safeSendMessage({ action: 'START_BULK_SYNC', items: itemsToSync }, (response) => {
         if (!response || !response.success) {
@@ -801,8 +768,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         async function performScrape() {
             let incomplete = false;
+            let overlayEl = null;
             const debugLog = []; // Collects debug info per iteration
+
+            const showWarningOverlay = () => {
+                if (document.getElementById('gas-exporter-warning')) return;
+                overlayEl = document.createElement('div');
+                overlayEl.id = 'gas-exporter-warning';
+                overlayEl.className = 'gas-exporter-warning-overlay';
+                overlayEl.innerHTML = `
+                    <div class="gas-exporter-warning-overlay-title">⚠️ EXPERIMENTAL EXPORT IN PROGRESS ⚠️</div>
+                    <div>Please <b>DO NOT</b> minimize, hide, or switch away from this tab!</div>
+                    <div>Google AI Studio may freeze the export if this tab loses visibility.</div>
+                `;
+                document.body.appendChild(overlayEl);
+            };
+
+            const removeWarningOverlay = () => {
+                if (overlayEl && overlayEl.parentNode) {
+                    overlayEl.parentNode.removeChild(overlayEl);
+                }
+            };
+
             try {
+                if (bulkMode) showWarningOverlay();
+
                 // Wait for the main container to exist
                 let retries = 0;
                 while (!document.querySelector('ms-chat-turn') && retries < 10) {
@@ -940,6 +930,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 sendResponse({ content: mdContent, incomplete, turnCount, domTurnCount });
             } catch (err) {
                 sendResponse({ error: err.message });
+            } finally { // Added finally block
+                removeWarningOverlay();
             }
         }
 

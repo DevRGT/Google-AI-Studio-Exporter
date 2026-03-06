@@ -12,3 +12,6 @@ backup/
 # Logs
 *.log
 .tmp/
+
+# Export Output
+output/

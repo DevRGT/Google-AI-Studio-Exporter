@@ -18,43 +18,6 @@ function clearBadge() {
     chrome.action.setBadgeText({ text: '' });
 }
 
-// --- Offscreen audio keepalive ---
-// Uses chrome.offscreen API to play silent audio, preventing:
-// - macOS App Nap (suspends occluded apps)
-// - Windows power throttling
-// - Chrome background tab throttling
-async function startOffscreenKeepAlive() {
-    try {
-        // Check if offscreen document already exists
-        const existingContexts = await chrome.runtime.getContexts({
-            contextTypes: ['OFFSCREEN_DOCUMENT']
-        });
-        if (existingContexts.length > 0) return;
-
-        await chrome.offscreen.createDocument({
-            url: '../offscreen/offscreen.html',
-            reasons: ['AUDIO_PLAYBACK'],
-            justification: 'Silent audio to prevent OS throttling during bulk export'
-        });
-        // Tell the offscreen document to start playing
-        chrome.runtime.sendMessage({ action: 'START_KEEPALIVE' });
-    } catch (e) {
-        console.warn('[SW] Offscreen keepalive failed:', e);
-    }
-}
-
-async function stopOffscreenKeepAlive() {
-    try {
-        const existingContexts = await chrome.runtime.getContexts({
-            contextTypes: ['OFFSCREEN_DOCUMENT']
-        });
-        if (existingContexts.length > 0) {
-            chrome.runtime.sendMessage({ action: 'STOP_KEEPALIVE' });
-            await chrome.offscreen.closeDocument();
-        }
-    } catch (e) { /* ignore */ }
-}
-
 // Keepalive: content script connects a port to prevent idle shutdown during sync
 chrome.runtime.onConnect.addListener((port) => {
     if (port.name === 'keepalive') {
@@ -77,13 +40,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else if (message.action === 'ABORT_SYNC') {
         if (abortController) {
             abortController.abort();
+            // Send immediate UI feedback
+            chrome.runtime.sendMessage({
+                action: 'SYNC_UPDATE',
+                payload: {
+                    state: 'ABORTED',
+                    message: 'Sync cancelled by user.',
+                    logEntry: '\n⏹️ Aborted by user.',
+                    logType: 'error'
+                }
+            }).catch(() => { });
         }
         sendResponse({ success: true });
     }
     return true; // Keep channel open for async
 });
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = (ms, signal) => new Promise((resolve, reject) => {
+    const timeout = setTimeout(resolve, ms);
+    if (signal) {
+        signal.addEventListener('abort', () => {
+            clearTimeout(timeout);
+            reject(new DOMException("Aborted", "AbortError"));
+        }, { once: true });
+    }
+});
 
 async function startBulkSync(items, tabId) {
     isSyncInProgress = true;
@@ -149,7 +130,7 @@ async function startBulkSync(items, tabId) {
                 // Determine sleep time (polite 3s - 5s)
                 const delayMs = Math.floor(Math.random() * 2000) + 3000;
                 sendProgress(`Sleeping for ${(delayMs / 1000).toFixed(1)}s before fetching ${title}...`);
-                await sleep(delayMs);
+                await sleep(delayMs, abortController.signal);
 
                 if (abortController?.signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
@@ -172,14 +153,28 @@ async function startBulkSync(items, tabId) {
                 try {
                     // Wait for the page to load
                     await new Promise((resolve, reject) => {
-                        let timeoutId = setTimeout(() => reject(new Error("Timeout waiting for page to load")), 30000);
-                        chrome.tabs.onUpdated.addListener(function listener(updatedTabId, info) {
+                        const onAbort = () => {
+                            chrome.tabs.onUpdated.removeListener(listener);
+                            clearTimeout(timeoutId);
+                            reject(new DOMException("Aborted", "AbortError"));
+                        };
+                        abortController?.signal.addEventListener('abort', onAbort, { once: true });
+
+                        let timeoutId = setTimeout(() => {
+                            abortController?.signal.removeEventListener('abort', onAbort);
+                            chrome.tabs.onUpdated.removeListener(listener);
+                            reject(new Error("Timeout waiting for page to load"));
+                        }, 30000);
+
+                        function listener(updatedTabId, info) {
                             if (updatedTabId === scrapeTabId && info.status === 'complete') {
+                                abortController?.signal.removeEventListener('abort', onAbort);
                                 clearTimeout(timeoutId);
                                 chrome.tabs.onUpdated.removeListener(listener);
                                 resolve();
                             }
-                        });
+                        }
+                        chrome.tabs.onUpdated.addListener(listener);
                     });
 
                     if (abortController?.signal?.aborted) throw new DOMException("Aborted", "AbortError");
@@ -189,13 +184,10 @@ async function startBulkSync(items, tabId) {
                     for (let focusTry = 0; focusTry < 3; focusTry++) {
                         await chrome.windows.update(exportWindow.id, { state: 'normal', focused: true });
                         await chrome.tabs.update(scrapeTabId, { active: true });
-                        await sleep(500);
+                        await sleep(500, abortController.signal);
                     }
 
                     // --- ANTI-THROTTLE INJECTION ---
-                    // 1. Offscreen audio keepalive (OS-level anti-throttle)
-                    await startOffscreenKeepAlive();
-
                     // 2. Fake visibility in the PAGE's JS context (Angular anti-throttle)
                     await chrome.scripting.executeScript({
                         target: { tabId: scrapeTabId },
@@ -215,28 +207,8 @@ async function startBulkSync(items, tabId) {
                         }
                     });
 
-                    // 3. Inject silent audio in the scrape tab (MAIN world)
-                    //    This is the CRITICAL layer — makes Chrome register the tab
-                    //    as "playing audio" (🔊 icon), preventing App Nap and
-                    //    Chrome's aggressive background throttling.
-                    const silenceUrl = chrome.runtime.getURL('assets/silence.wav');
-                    await chrome.scripting.executeScript({
-                        target: { tabId: scrapeTabId },
-                        world: 'MAIN',
-                        func: (url) => {
-                            const audio = document.createElement('audio');
-                            audio.id = '__export_keepalive_audio';
-                            audio.src = url;
-                            audio.loop = true;
-                            audio.volume = 0.05;
-                            document.body.appendChild(audio);
-                            audio.play().catch(() => { });
-                        },
-                        args: [silenceUrl]
-                    });
-
                     // Wait for SPA hydration after focus + visibility override
-                    await sleep(2500);
+                    await sleep(2500, abortController.signal);
 
                     // --- FOCUS GUARD ---
                     // Only monitors if the active TAB within the export window changes.
@@ -256,8 +228,16 @@ async function startBulkSync(items, tabId) {
 
                     // Ask content.js to scrape it
                     const scrapeResult = await new Promise((resolve, reject) => {
+                        const onAbort = () => {
+                            reject(new DOMException("Aborted", "AbortError"));
+                        };
+                        abortController?.signal.addEventListener('abort', onAbort, { once: true });
+
                         setTimeout(() => {
-                            if (abortController?.signal?.aborted) return reject(new DOMException("Aborted", "AbortError"));
+                            if (abortController?.signal?.aborted) {
+                                abortController?.signal.removeEventListener('abort', onAbort);
+                                return reject(new DOMException("Aborted", "AbortError"));
+                            }
                             chrome.tabs.sendMessage(scrapeTabId, {
                                 action: 'SCRAPE_CURRENT_PAGE',
                                 title,
@@ -265,6 +245,7 @@ async function startBulkSync(items, tabId) {
                                 bulkMode: true,
                                 debugMode: DEBUG_SCRAPE
                             }, (response) => {
+                                abortController?.signal.removeEventListener('abort', onAbort);
                                 if (chrome.runtime.lastError) {
                                     reject(new Error(chrome.runtime.lastError.message));
                                 } else if (response && response.error) {
@@ -367,6 +348,5 @@ async function startBulkSync(items, tabId) {
         isSyncInProgress = false;
         abortController = null;
         clearBadge();
-        await stopOffscreenKeepAlive();
     }
 }
