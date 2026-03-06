@@ -140,11 +140,11 @@ async function startBulkSync(items, tabId) {
                 // --- DEDICATED WINDOW ---
                 // Open each discussion in its own browser window.
                 // Same profile/auth, but fully isolated from user's browsing.
-                // MUST be focused:true — Chrome won't hydrate the SPA or allow
-                // scrolling in an unfocused window.
+                // focused:false — Iron Dome's Emulation.setFocusEmulationEnabled
+                // handles focus at the engine level, so we don't steal OS focus.
                 const exportWindow = await chrome.windows.create({
                     url,
-                    focused: true,
+                    focused: false,
                     type: 'normal'
                 });
                 const scrapeTabId = exportWindow.tabs[0].id;
@@ -181,8 +181,8 @@ async function startBulkSync(items, tabId) {
                     if (abortController?.signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
                     // --- IRON DOME: Anti-Throttle Activation ---
-                    // Ensure window is focused before debugger attachment
-                    await chrome.windows.update(exportWindow.id, { state: 'normal', focused: true });
+                    // No need for OS-level focus — Iron Dome emulates it at engine level.
+                    // Just ensure the tab is the active one within its own window.
                     await chrome.tabs.update(scrapeTabId, { active: true });
                     await sleep(500, abortController.signal);
 
