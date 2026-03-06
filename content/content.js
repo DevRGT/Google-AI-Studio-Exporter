@@ -67,9 +67,9 @@ function showWarningOverlay() {
     warningOverlayEl.id = 'gas-exporter-warning';
     warningOverlayEl.className = 'gas-exporter-warning-overlay';
     warningOverlayEl.innerHTML = `
-        <div class="gas-exporter-warning-overlay-title">⚠️ EXPERIMENTAL EXPORT IN PROGRESS ⚠️</div>
-        <div>Please <b>DO NOT</b> minimize, hide, or switch away from this tab!</div>
-        <div>Google AI Studio may freeze the export if this tab loses visibility.</div>
+        <div class="gas-exporter-warning-overlay-title">📥 EXPORT IN PROGRESS</div>
+        <div>This export is designed to run in the <b>background</b>.</div>
+        <div>For best results, please leave it running without intervention.</div>
     `;
     document.body.appendChild(warningOverlayEl);
 }
