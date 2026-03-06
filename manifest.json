@@ -17,7 +17,8 @@
         "activeTab",
         "scripting",
         "downloads",
-        "offscreen"
+        "offscreen",
+        "debugger"
     ],
     "host_permissions": [
         "https://aistudio.google.com/*"

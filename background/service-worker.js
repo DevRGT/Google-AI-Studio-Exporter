@@ -1,6 +1,7 @@
 import { getDirectoryHandle } from '../utils/idb-storage.js';
 import { needsExport, markAsExported } from '../utils/bulk-export-registry.js';
 import { parseApiPayloadToMarkdown, extractJsonFromHtml } from '../utils/markdown-parser.js';
+import { engageDome, disengageDome, injectShield } from '../utils/iron-dome.js';
 
 let isSyncInProgress = false;
 let abortController = null;
@@ -179,35 +180,23 @@ async function startBulkSync(items, tabId) {
 
                     if (abortController?.signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
-                    // Ensure window is fully focused and normal before scraping.
-                    // Retry up to 3 times — Chrome may not honor focus immediately.
-                    for (let focusTry = 0; focusTry < 3; focusTry++) {
-                        await chrome.windows.update(exportWindow.id, { state: 'normal', focused: true });
-                        await chrome.tabs.update(scrapeTabId, { active: true });
-                        await sleep(500, abortController.signal);
+                    // --- IRON DOME: Anti-Throttle Activation ---
+                    // Ensure window is focused before debugger attachment
+                    await chrome.windows.update(exportWindow.id, { state: 'normal', focused: true });
+                    await chrome.tabs.update(scrapeTabId, { active: true });
+                    await sleep(500, abortController.signal);
+
+                    // Engage Iron Dome: Debugger-level CPU/focus anti-throttle
+                    try {
+                        await engageDome(scrapeTabId);
+                    } catch (domeErr) {
+                        console.warn(`[IronDome] Could not engage on tab ${scrapeTabId}: ${domeErr.message}. Continuing without dome.`);
                     }
 
-                    // --- ANTI-THROTTLE INJECTION ---
-                    // 2. Fake visibility in the PAGE's JS context (Angular anti-throttle)
-                    await chrome.scripting.executeScript({
-                        target: { tabId: scrapeTabId },
-                        world: 'MAIN',
-                        func: () => {
-                            Object.defineProperty(document, 'visibilityState', {
-                                get: () => 'visible',
-                                configurable: true
-                            });
-                            Object.defineProperty(document, 'hidden', {
-                                get: () => false,
-                                configurable: true
-                            });
-                            document.addEventListener('visibilitychange', (e) => {
-                                e.stopImmediatePropagation();
-                            }, true);
-                        }
-                    });
+                    // Inject page-level shield (Visibility API + mouse traps + blur nulls)
+                    await injectShield(scrapeTabId);
 
-                    // Wait for SPA hydration after focus + visibility override
+                    // Wait for SPA hydration after Iron Dome activation
                     await sleep(2500, abortController.signal);
 
                     // --- FOCUS GUARD ---
@@ -267,6 +256,8 @@ async function startBulkSync(items, tabId) {
                     isIncomplete = !!(scrapeResult.incomplete || focusLost);
 
                 } finally {
+                    // Disengage Iron Dome before closing the window
+                    await disengageDome(scrapeTabId).catch(() => { });
                     // Always close the dedicated export window
                     await chrome.windows.remove(exportWindow.id).catch(() => { });
                 }
