@@ -188,18 +188,18 @@ const _JSZipRef = (typeof JSZip !== 'undefined') ? JSZip : null;
             to { opacity: 1; }
         }
 
-        /* 主弹窗 */
-        #ai-box {
-            background: white; 
-            padding: 32px; 
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 92%; 
-            max-width: 560px;
-            text-align: center; 
-            position: relative;
-            animation: ai-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
+         /* 主弹窗 */
+         #ai-box {
+             background: white; 
+             padding: 32px; 
+             border-radius: 20px;
+             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+             width: 92%; 
+             max-width: 336px;
+             text-align: center; 
+             position: relative;
+             animation: ai-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+         }
         
         @keyframes ai-slide-up {
             from { transform: translateY(30px); opacity: 0; }

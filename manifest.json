@@ -16,7 +16,8 @@
         "storage",
         "activeTab",
         "scripting",
-        "downloads"
+        "downloads",
+        "offscreen"
     ],
     "host_permissions": [
         "https://aistudio.google.com/*"
@@ -41,5 +42,15 @@
     "options_ui": {
         "page": "options/options.html",
         "open_in_tab": true
-    }
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "assets/silence.wav"
+            ],
+            "matches": [
+                "https://aistudio.google.com/*"
+            ]
+        }
+    ]
 }

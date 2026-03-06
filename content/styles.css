@@ -181,7 +181,7 @@
     padding: 36px 40px;
     border-radius: 16px;
     width: 90%;
-    max-width: 400px;
+    max-width: 240px;
     text-align: center;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
     animation: cardSlideIn 0.35s ease-out;
@@ -263,7 +263,7 @@
     background: white;
     border-radius: 16px;
     width: 90%;
-    max-width: 400px;
+    max-width: 240px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
     animation: cardSlideIn 0.3s ease-out;
     overflow: hidden;

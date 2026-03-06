@@ -103,12 +103,45 @@ function establishKeepalive() {
         keepalivePort = null;
     }
 }
+// Silent audio to prevent macOS App Nap on the library tab during bulk export
+let audioKeepAlive = null;
+
+function startAudioKeepAlive() {
+    if (audioKeepAlive) return;
+    try {
+        const audio = document.createElement('audio');
+        audio.id = '__library_keepalive_audio';
+        audio.src = chrome.runtime.getURL('assets/silence.wav');
+        audio.loop = true;
+        audio.volume = 0.05;
+        document.body.appendChild(audio);
+        audio.play().then(() => {
+            console.log('[Export] Audio keepalive started (playing silent MP3)');
+        }).catch((e) => {
+            console.warn('[Export] Audio keepalive play failed:', e);
+        });
+        audioKeepAlive = audio;
+    } catch (e) {
+        console.warn('[Export] Audio keepalive failed:', e);
+    }
+}
+
+function stopAudioKeepAlive() {
+    if (audioKeepAlive) {
+        try {
+            audioKeepAlive.pause();
+            audioKeepAlive.remove();
+        } catch (e) { /* ignore */ }
+        audioKeepAlive = null;
+    }
+}
 
 function releaseKeepalive() {
     if (keepalivePort) {
         try { keepalivePort.disconnect(); } catch (e) { /* ignore */ }
         keepalivePort = null;
     }
+    stopAudioKeepAlive();
 }
 
 // --- Page detection ---
@@ -238,6 +271,7 @@ function handleBulkSyncClick() {
     showProgressOverlay(itemsToSync.length);
 
     establishKeepalive();
+    startAudioKeepAlive();
 
     safeSendMessage({ action: 'START_BULK_SYNC', items: itemsToSync }, (response) => {
         if (!response || !response.success) {
@@ -737,6 +771,14 @@ function updateProgressUI(payload) {
         progressBar.style.backgroundColor = '#d93025';
         document.getElementById('sync-abort-btn').textContent = 'Close';
         document.getElementById('sync-abort-btn').onclick = () => { overlayDiv.style.display = 'none'; };
+        // Show error prominently in the log area
+        if (message && logArea) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'color: #d93025; font-weight: bold; font-size: 13px; padding: 8px; background: #fce8e6; border-radius: 4px; margin-top: 4px;';
+            errorDiv.textContent = `❌ ${message}`;
+            logArea.appendChild(errorDiv);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
         releaseKeepalive();
     }
 }
@@ -754,6 +796,155 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'SYNC_UPDATE') {
         updateProgressUI(message.payload);
         sendResponse({ received: true });
+    } else if (message.action === 'SCRAPE_CURRENT_PAGE') {
+        const { title, settings, bulkMode, debugMode } = message;
+
+        async function performScrape() {
+            let incomplete = false;
+            const debugLog = []; // Collects debug info per iteration
+            try {
+                // Wait for the main container to exist
+                let retries = 0;
+                while (!document.querySelector('ms-chat-turn') && retries < 10) {
+                    await DOMCapture.sleep(500);
+                    retries++;
+                }
+
+                const scroller = DOMCapture.findRealScroller();
+                if (!scroller) throw new Error("Could not find the chat scroll container");
+
+                // --- Step 1: Scroll to the TOP of the conversation ---
+                const scrollbarButtons = document.querySelectorAll('button[id^="scrollbar-item-"]');
+                if (scrollbarButtons.length > 0) {
+                    scrollbarButtons[0].click();
+                    await DOMCapture.sleep(1500);
+                }
+
+                if (scroller.scrollTop > 500) {
+                    let upAttempts = 0;
+                    while (scroller.scrollTop > 100 && upAttempts < 20) {
+                        upAttempts++;
+                        const scrollAmount = Math.min(window.innerHeight, scroller.scrollTop);
+                        scroller.scrollBy({ top: -scrollAmount, behavior: 'instant' });
+                        await DOMCapture.sleep(300);
+                    }
+                }
+
+                scroller.scrollTop = 0;
+                await DOMCapture.sleep(500);
+                if (scroller.scrollTop > 10) {
+                    scroller.scrollTo({ top: 0, behavior: 'instant' });
+                    await DOMCapture.sleep(500);
+                }
+
+                await DOMCapture.sleep(800);
+
+
+                if (debugMode) {
+                    debugLog.push(`[DEBUG] Start scrape | scrollTop=${scroller.scrollTop} | scrollHeight=${scroller.scrollHeight} | clientHeight=${scroller.clientHeight} | visibility=${document.visibilityState} | windowFocused=${document.hasFocus()}`);
+                }
+
+                // --- Step 2: Incremental scroll-and-capture loop ---
+                DOMCapture.resetState();
+
+                let lastScrollTop = -9999;
+                let stuckCount = 0;
+                let iteration = 0;
+
+                while (true) {
+                    iteration++;
+
+
+                    const turnsBefore = DOMCapture.getCollectedCount();
+
+                    // Capture whatever turns are currently visible
+                    DOMCapture.captureData(scroller, !!bulkMode);
+
+                    const turnsAfter = DOMCapture.getCollectedCount();
+                    const newTurns = turnsAfter - turnsBefore;
+
+                    if (debugMode) {
+                        debugLog.push(`[DEBUG] Iter ${iteration} | scrollTop=${Math.round(scroller.scrollTop)}/${scroller.scrollHeight} | visibility=${document.visibilityState} | focused=${document.hasFocus()} | turns: ${turnsBefore}→${turnsAfter} (+${newTurns}) | DOMturns=${scroller.querySelectorAll('ms-chat-turn').length}`);
+                    }
+
+                    // Scroll down by ~70% of the viewport
+                    // MUST use 'instant' — 'smooth' requires requestAnimationFrame
+                    // which Chrome pauses for hidden/backgrounded pages.
+                    scroller.scrollBy({ top: window.innerHeight * 0.7, behavior: 'instant' });
+                    await DOMCapture.sleep(700);
+
+                    // Check if we're stuck at the bottom
+                    const currentScroll = scroller.scrollTop;
+                    if (Math.abs(currentScroll - lastScrollTop) <= 2) {
+                        // Try instant scrollTo recovery before counting as stuck
+                        const recoveryTarget = currentScroll + window.innerHeight * 0.7;
+                        scroller.scrollTo({ top: recoveryTarget, behavior: 'instant' });
+                        await DOMCapture.sleep(500);
+
+                        const afterRecovery = scroller.scrollTop;
+                        if (Math.abs(afterRecovery - currentScroll) <= 2) {
+                            stuckCount++;
+                            if (debugMode) {
+                                debugLog.push(`[DEBUG] Stuck check ${stuckCount}/3 at scrollTop=${Math.round(currentScroll)} (recovery failed)`);
+                            }
+                            if (stuckCount >= 3) {
+                                if (debugMode) debugLog.push(`[DEBUG] Loop ended — stuck at bottom`);
+                                break;
+                            }
+                        } else {
+                            // Recovery worked — reset stuck counter
+                            stuckCount = 0;
+                            if (debugMode) {
+                                debugLog.push(`[DEBUG] Scroll recovery succeeded: ${Math.round(currentScroll)} → ${Math.round(afterRecovery)}`);
+                            }
+                        }
+                    } else {
+                        stuckCount = 0;
+                    }
+                    lastScrollTop = scroller.scrollTop;
+                }
+
+                // --- INTEGRITY CHECK ---
+                // Compare collected turns vs actual DOM turns.
+                // If we captured significantly fewer than what's in the DOM,
+                // the scrape was likely disrupted (focus loss, throttling, etc.)
+                const collectedCount = DOMCapture.getCollectedCount();
+                const domTurnCount = scroller.querySelectorAll('ms-chat-turn').length;
+
+                if (bulkMode && domTurnCount > 0 && collectedCount < domTurnCount * 0.5) {
+                    incomplete = true;
+                    if (debugMode) {
+                        debugLog.push(`[DEBUG] ⚠️ INTEGRITY FAIL: collected=${collectedCount} vs DOMturns=${domTurnCount} (< 50%) → marking incomplete`);
+                    }
+                } else if (debugMode) {
+                    debugLog.push(`[DEBUG] ✅ INTEGRITY OK: collected=${collectedCount} vs DOMturns=${domTurnCount}`);
+                }
+
+                DOMCapture.normalizeConversation();
+
+                let mdContent = DOMCapture.generateMarkdownExport(title, settings || {});
+                const turnCount = DOMCapture.getTurnCount();
+
+                // Append debug log to the markdown if debug mode is on
+                if (debugMode && debugLog.length > 0) {
+                    mdContent += `\n\n---\n\n## 🔬 DEBUG: Scrape Iteration Log\n\n`;
+                    mdContent += '```\n';
+                    mdContent += debugLog.join('\n');
+                    mdContent += '\n```\n';
+                }
+
+                if (turnCount === 0 && !incomplete) {
+                    throw new Error("No chat turns found in the DOM");
+                }
+
+                sendResponse({ content: mdContent, incomplete, turnCount, domTurnCount });
+            } catch (err) {
+                sendResponse({ error: err.message });
+            }
+        }
+
+        performScrape();
+        return true; // Keep message channel open for async response
     }
 });
 

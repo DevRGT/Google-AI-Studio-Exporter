@@ -5,6 +5,9 @@ import { parseApiPayloadToMarkdown, extractJsonFromHtml } from '../utils/markdow
 let isSyncInProgress = false;
 let abortController = null;
 
+// ⚙️ DEBUG FLAG — Set to true to add iteration markers in exported markdown
+const DEBUG_SCRAPE = true;
+
 // Badge configuration
 const BADGE_COLOR = '#1a73e8';
 function setBadge(text) {
@@ -13,6 +16,43 @@ function setBadge(text) {
 }
 function clearBadge() {
     chrome.action.setBadgeText({ text: '' });
+}
+
+// --- Offscreen audio keepalive ---
+// Uses chrome.offscreen API to play silent audio, preventing:
+// - macOS App Nap (suspends occluded apps)
+// - Windows power throttling
+// - Chrome background tab throttling
+async function startOffscreenKeepAlive() {
+    try {
+        // Check if offscreen document already exists
+        const existingContexts = await chrome.runtime.getContexts({
+            contextTypes: ['OFFSCREEN_DOCUMENT']
+        });
+        if (existingContexts.length > 0) return;
+
+        await chrome.offscreen.createDocument({
+            url: '../offscreen/offscreen.html',
+            reasons: ['AUDIO_PLAYBACK'],
+            justification: 'Silent audio to prevent OS throttling during bulk export'
+        });
+        // Tell the offscreen document to start playing
+        chrome.runtime.sendMessage({ action: 'START_KEEPALIVE' });
+    } catch (e) {
+        console.warn('[SW] Offscreen keepalive failed:', e);
+    }
+}
+
+async function stopOffscreenKeepAlive() {
+    try {
+        const existingContexts = await chrome.runtime.getContexts({
+            contextTypes: ['OFFSCREEN_DOCUMENT']
+        });
+        if (existingContexts.length > 0) {
+            chrome.runtime.sendMessage({ action: 'STOP_KEEPALIVE' });
+            await chrome.offscreen.closeDocument();
+        }
+    } catch (e) { /* ignore */ }
 }
 
 // Keepalive: content script connects a port to prevent idle shutdown during sync
@@ -37,7 +77,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else if (message.action === 'ABORT_SYNC') {
         if (abortController) {
             abortController.abort();
-            abortController = null;
         }
         sendResponse({ success: true });
     }
@@ -82,7 +121,7 @@ async function startBulkSync(items, tabId) {
         let errors = 0;
 
         for (const item of items) {
-            if (abortController.signal.aborted) {
+            if (abortController?.signal?.aborted) {
                 sendUpdate({ state: 'ABORTED', message: 'Sync cancelled by user.', processed, total, downloaded, skipped, errors });
                 break;
             }
@@ -105,48 +144,213 @@ async function startBulkSync(items, tabId) {
 
             sendProgress(`Fetching: ${title}`, `\n📥 Fetching: ${title}`, 'info');
 
-            // 4. Fetch the data from Google's API
-            // The exact API endpoint format from the original script UI interception
+            // 4. Fetch the data via content script in a dedicated window
             try {
                 // Determine sleep time (polite 3s - 5s)
                 const delayMs = Math.floor(Math.random() * 2000) + 3000;
                 sendProgress(`Sleeping for ${(delayMs / 1000).toFixed(1)}s before fetching ${title}...`);
                 await sleep(delayMs);
 
-                if (abortController.signal.aborted) break;
+                if (abortController?.signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
                 const url = `https://aistudio.google.com/app/prompts/${id}`;
-                const response = await fetch(url, { signal: abortController.signal });
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-                const html = await response.text();
+                // --- DEDICATED WINDOW ---
+                // Open each discussion in its own browser window.
+                // Same profile/auth, but fully isolated from user's browsing.
+                // MUST be focused:true — Chrome won't hydrate the SPA or allow
+                // scrolling in an unfocused window.
+                const exportWindow = await chrome.windows.create({
+                    url,
+                    focused: true,
+                    type: 'normal'
+                });
+                const scrapeTabId = exportWindow.tabs[0].id;
 
-                // 5. Extract and Parse
-                const jsonData = extractJsonFromHtml(html);
-                const mdContent = parseApiPayloadToMarkdown(jsonData, title, settings);
+                let mdContent = '';
+                let isIncomplete = false;
+                try {
+                    // Wait for the page to load
+                    await new Promise((resolve, reject) => {
+                        let timeoutId = setTimeout(() => reject(new Error("Timeout waiting for page to load")), 30000);
+                        chrome.tabs.onUpdated.addListener(function listener(updatedTabId, info) {
+                            if (updatedTabId === scrapeTabId && info.status === 'complete') {
+                                clearTimeout(timeoutId);
+                                chrome.tabs.onUpdated.removeListener(listener);
+                                resolve();
+                            }
+                        });
+                    });
 
-                // 6. Write to File System
+                    if (abortController?.signal?.aborted) throw new DOMException("Aborted", "AbortError");
+
+                    // Ensure window is fully focused and normal before scraping.
+                    // Retry up to 3 times — Chrome may not honor focus immediately.
+                    for (let focusTry = 0; focusTry < 3; focusTry++) {
+                        await chrome.windows.update(exportWindow.id, { state: 'normal', focused: true });
+                        await chrome.tabs.update(scrapeTabId, { active: true });
+                        await sleep(500);
+                    }
+
+                    // --- ANTI-THROTTLE INJECTION ---
+                    // 1. Offscreen audio keepalive (OS-level anti-throttle)
+                    await startOffscreenKeepAlive();
+
+                    // 2. Fake visibility in the PAGE's JS context (Angular anti-throttle)
+                    await chrome.scripting.executeScript({
+                        target: { tabId: scrapeTabId },
+                        world: 'MAIN',
+                        func: () => {
+                            Object.defineProperty(document, 'visibilityState', {
+                                get: () => 'visible',
+                                configurable: true
+                            });
+                            Object.defineProperty(document, 'hidden', {
+                                get: () => false,
+                                configurable: true
+                            });
+                            document.addEventListener('visibilitychange', (e) => {
+                                e.stopImmediatePropagation();
+                            }, true);
+                        }
+                    });
+
+                    // 3. Inject silent audio in the scrape tab (MAIN world)
+                    //    This is the CRITICAL layer — makes Chrome register the tab
+                    //    as "playing audio" (🔊 icon), preventing App Nap and
+                    //    Chrome's aggressive background throttling.
+                    const silenceUrl = chrome.runtime.getURL('assets/silence.wav');
+                    await chrome.scripting.executeScript({
+                        target: { tabId: scrapeTabId },
+                        world: 'MAIN',
+                        func: (url) => {
+                            const audio = document.createElement('audio');
+                            audio.id = '__export_keepalive_audio';
+                            audio.src = url;
+                            audio.loop = true;
+                            audio.volume = 0.05;
+                            document.body.appendChild(audio);
+                            audio.play().catch(() => { });
+                        },
+                        args: [silenceUrl]
+                    });
+
+                    // Wait for SPA hydration after focus + visibility override
+                    await sleep(2500);
+
+                    // --- FOCUS GUARD ---
+                    // Only monitors if the active TAB within the export window changes.
+                    // Switching to another app or another Chrome window is fine —
+                    // Chrome doesn't fully throttle windows that lose focus.
+                    // We only care about someone opening a new tab
+                    // WITHIN the export window.
+                    let focusLost = false;
+                    const focusGuard = (activeInfo) => {
+                        if (activeInfo.windowId === exportWindow.id && activeInfo.tabId !== scrapeTabId) {
+                            focusLost = true;
+                        }
+                    };
+                    chrome.tabs.onActivated.addListener(focusGuard);
+
+                    sendProgress(`Scraping: ${title}`, `\n🔍 Scraping DOM for: ${title}`, 'info');
+
+                    // Ask content.js to scrape it
+                    const scrapeResult = await new Promise((resolve, reject) => {
+                        setTimeout(() => {
+                            if (abortController?.signal?.aborted) return reject(new DOMException("Aborted", "AbortError"));
+                            chrome.tabs.sendMessage(scrapeTabId, {
+                                action: 'SCRAPE_CURRENT_PAGE',
+                                title,
+                                settings,
+                                bulkMode: true,
+                                debugMode: DEBUG_SCRAPE
+                            }, (response) => {
+                                if (chrome.runtime.lastError) {
+                                    reject(new Error(chrome.runtime.lastError.message));
+                                } else if (response && response.error) {
+                                    reject(new Error(response.error));
+                                } else if (response) {
+                                    resolve(response);
+                                } else {
+                                    reject(new Error("Unknown error from scraping script"));
+                                }
+                            });
+                        }, 1500);
+                    });
+
+                    // Remove focus guard listener
+                    chrome.tabs.onActivated.removeListener(focusGuard);
+
+                    mdContent = scrapeResult.content || '';
+                    // Check if content script flagged as incomplete OR our focus guard triggered
+                    isIncomplete = !!(scrapeResult.incomplete || focusLost);
+
+                } finally {
+                    // Always close the dedicated export window
+                    await chrome.windows.remove(exportWindow.id).catch(() => { });
+                }
+
+                if (abortController?.signal?.aborted) throw new DOMException("Aborted", "AbortError");
+
+                // 5. Write to File System
                 const safeTitle = title.replace(/[/\\?%*:|"<>]/g, '-').trim() || `Untitled_${id}`;
-                const filename = `${safeTitle}.md`;
 
-                const fileHandle = await handle.getFileHandle(filename, { create: true });
-                const writable = await fileHandle.createWritable();
-                await writable.write(mdContent);
-                await writable.close();
+                if (isIncomplete) {
+                    // Save as _INCOMPLETE — do NOT mark as exported (will retry next time)
+                    const incompleteFilename = `${safeTitle}_INCOMPLETE.md`;
+                    const fileHandle = await handle.getFileHandle(incompleteFilename, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(mdContent);
+                    await writable.close();
 
-                // 6. Update Registry
-                await markAsExported(id, timestamp);
-                downloaded++;
-                sendProgress(`Downloaded: ${title}`, `✅ Success: Saved as ${filename}`, 'success');
+                    errors++;
+                    const capturedInfo = scrapeResult.turnCount !== undefined
+                        ? ` (captured ${scrapeResult.turnCount} of ~${scrapeResult.domTurnCount || '?'} turns)`
+                        : '';
+                    sendProgress(
+                        `Incomplete: ${title}`,
+                        `⚠️ Incomplete: ${title}${capturedInfo}. Saved as ${incompleteFilename} (will retry next time)`,
+                        'error'
+                    );
+                } else {
+                    // Full success — save clean file
+                    const filename = `${safeTitle}.md`;
+                    const fileHandle = await handle.getFileHandle(filename, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(mdContent);
+                    await writable.close();
 
-            } catch (err) {
-                console.error(`Failed to export ${id}:`, err);
+                    // Delete stale _INCOMPLETE file if it exists from a previous failed attempt
+                    try {
+                        await handle.removeEntry(`${safeTitle}_INCOMPLETE.md`);
+                    } catch (_) { /* file doesn't exist — that's fine */ }
+
+                    // Mark as exported in registry
+                    await markAsExported(id, timestamp);
+                    downloaded++;
+                    sendProgress(`Downloaded: ${title}`, `✅ Success: Saved as ${filename}`, 'success');
+                }
+
+            } catch (e) {
+                if (e.name === 'AbortError') {
+                    console.log(`Fetch aborted for ${title}`);
+                    continue;
+                }
+                console.error(`Failed to export ${id}:`, e);
                 errors++;
-                sendProgress(`Error on ${title}: ${err.message}`, `❌ Error: Failed to export ${title} - ${err.message}`, 'error');
+                sendProgress(`Error on ${title}: ${e.message}`, `❌ Error: Failed to export ${title} - ${e.message}`, 'error');
             }
         }
 
-        if (!abortController.signal.aborted) {
+        if (abortController?.signal?.aborted) {
+            sendUpdate({
+                state: 'ABORTED',
+                processed, total, downloaded, skipped, errors,
+                message: 'Sync cancelled by user.',
+                logEntry: `\n⏹️ Sync Aborted! Summary: ${downloaded} Downloaded, ${skipped} Skipped, ${errors} Errors.`,
+                logType: 'error'
+            });
+        } else {
             sendUpdate({
                 state: 'FINISHED',
                 processed, total, downloaded, skipped, errors,
@@ -157,11 +361,12 @@ async function startBulkSync(items, tabId) {
         }
 
     } catch (err) {
-        console.error("Bulk sync error: ", err);
+        console.warn("Bulk sync stopped: ", err.message);
         sendUpdate({ state: 'ERROR', message: err.message });
     } finally {
         isSyncInProgress = false;
         abortController = null;
         clearBadge();
+        await stopOffscreenKeepAlive();
     }
 }
