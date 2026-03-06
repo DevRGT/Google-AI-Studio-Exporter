@@ -1,0 +1,55 @@
+{
+  "extensionName": {
+    "message": "Attiva le nuove schede"
+  },
+  "extensionShortName": {
+    "message": "SchedeAttive"
+  },
+  "extensionDescription": {
+    "message": "Porta ogni nuova scheda in primo piano: mette a fuoco automaticamente, evita aperture in background e mantiene il flusso di navigazione."
+  },
+  "actionTitle": {
+    "message": "Attiva le nuove schede: clicca per alternare"
+  },
+  "toggleCommandDescription": {
+    "message": "Attiva o disattiva Make New Tabs Active"
+  },
+  "snoozeCommandDescription": {
+    "message": "Sospendi per i minuti salvati"
+  },
+  "snoozeButtonLabel": {
+    "message": "Sospendi"
+  },
+  "snoozeMinutesSuffix": {
+    "message": "min"
+  },
+  "snoozeMinutesInputLabel": {
+    "message": "Minuti di sospensione"
+  },
+  "statusDisabled": {
+    "message": "Disattivato"
+  },
+  "statusEnabled": {
+    "message": "Attivato"
+  },
+  "statusSnoozedUntil": {
+    "message": "Sospeso fino alle $time$",
+    "placeholders": {
+      "time": {
+        "content": "$1"
+      }
+    }
+  },
+  "toggleStopSnooze": {
+    "message": "Interrompi sospensione"
+  },
+  "toggleDisable": {
+    "message": "Disattiva"
+  },
+  "toggleEnable": {
+    "message": "Attiva"
+  },
+  "snoozeSectionHeading": {
+    "message": "Sospensione"
+  }
+}

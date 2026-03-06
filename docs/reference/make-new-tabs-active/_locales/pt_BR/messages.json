@@ -1,0 +1,55 @@
+{
+  "extensionName": {
+    "message": "Ative novas abas"
+  },
+  "extensionShortName": {
+    "message": "AbasAtivas"
+  },
+  "extensionDescription": {
+    "message": "Traga cada nova aba para a frente: foco automático, impede aberturas em segundo plano e mantém a navegação fluindo."
+  },
+  "actionTitle": {
+    "message": "Ative novas abas: clique para alternar"
+  },
+  "toggleCommandDescription": {
+    "message": "Ativar ou desativar Make New Tabs Active"
+  },
+  "snoozeCommandDescription": {
+    "message": "Adiar pelos minutos salvos"
+  },
+  "snoozeButtonLabel": {
+    "message": "Adiar"
+  },
+  "snoozeMinutesSuffix": {
+    "message": "min"
+  },
+  "snoozeMinutesInputLabel": {
+    "message": "Minutos para adiar"
+  },
+  "statusDisabled": {
+    "message": "Desativado"
+  },
+  "statusEnabled": {
+    "message": "Ativado"
+  },
+  "statusSnoozedUntil": {
+    "message": "Adiado até $time$",
+    "placeholders": {
+      "time": {
+        "content": "$1"
+      }
+    }
+  },
+  "toggleStopSnooze": {
+    "message": "Parar adiamento"
+  },
+  "toggleDisable": {
+    "message": "Desativar"
+  },
+  "toggleEnable": {
+    "message": "Ativar"
+  },
+  "snoozeSectionHeading": {
+    "message": "Adiar"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "extensionName": {
+    "message": "Make New Tabs Active"
+  },
+  "extensionShortName": {
+    "message": "MakeNewTabsActive"
+  },
+  "extensionDescription": {
+    "message": "Bring every new tab to the front - auto-focus tabs, stop background openings, keep browsing flow uninterrupted."
+  },
+  "actionTitle": {
+    "message": "Make New Tabs Active: click to toggle"
+  },
+  "toggleCommandDescription": {
+    "message": "Toggle Make New Tabs Active on/off"
+  },
+  "snoozeCommandDescription": {
+    "message": "Snooze for saved minutes"
+  },
+  "snoozeButtonLabel": {
+    "message": "Snooze"
+  },
+  "snoozeMinutesSuffix": {
+    "message": "min"
+  },
+  "snoozeMinutesInputLabel": {
+    "message": "Minutes to snooze"
+  },
+  "statusDisabled": {
+    "message": "Disabled"
+  },
+  "statusEnabled": {
+    "message": "Enabled"
+  },
+  "statusSnoozedUntil": {
+    "message": "Snoozed until $time$",
+    "placeholders": {
+      "time": {
+        "content": "$1"
+      }
+    }
+  },
+  "toggleStopSnooze": {
+    "message": "Stop Snooze"
+  },
+  "toggleDisable": {
+    "message": "Disable"
+  },
+  "toggleEnable": {
+    "message": "Enable"
+  },
+  "snoozeSectionHeading": {
+    "message": "Snooze"
+  }
+}
