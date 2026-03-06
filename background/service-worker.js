@@ -138,14 +138,13 @@ async function startBulkSync(items, tabId) {
                 const url = `https://aistudio.google.com/app/prompts/${id}#gas-exporter-active`;
 
                 // --- DEDICATED WINDOW ---
-                // Open each discussion in its own browser window.
-                // Same profile/auth, but fully isolated from user's browsing.
-                // focused:false — Iron Dome's Emulation.setFocusEmulationEnabled
-                // handles focus at the engine level, so we don't steal OS focus.
+                // Open each discussion minimized — Iron Dome's debugger-level
+                // focus emulation keeps Chrome rendering even in minimized state.
                 const exportWindow = await chrome.windows.create({
                     url,
                     focused: false,
-                    type: 'normal'
+                    state: 'minimized',
+                    type: 'popup'
                 });
                 const scrapeTabId = exportWindow.tabs[0].id;
 
