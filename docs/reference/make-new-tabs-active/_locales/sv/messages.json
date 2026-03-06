@@ -1,0 +1,55 @@
+{
+  "extensionName": {
+    "message": "Aktivera nya flikar"
+  },
+  "extensionShortName": {
+    "message": "AktivaFlikar"
+  },
+  "extensionDescription": {
+    "message": "Flyttar varje ny flik längst fram: fokuserar automatiskt, stoppar bakgrundsflikar och håller surfflödet igång."
+  },
+  "actionTitle": {
+    "message": "Aktivera nya flikar: klicka för att växla"
+  },
+  "toggleCommandDescription": {
+    "message": "Aktivera eller inaktivera Make New Tabs Active"
+  },
+  "snoozeCommandDescription": {
+    "message": "Pausa under sparade minuter"
+  },
+  "snoozeButtonLabel": {
+    "message": "Snooza"
+  },
+  "snoozeMinutesSuffix": {
+    "message": "min"
+  },
+  "snoozeMinutesInputLabel": {
+    "message": "Minuter att snooza"
+  },
+  "statusDisabled": {
+    "message": "Inaktiverad"
+  },
+  "statusEnabled": {
+    "message": "Aktiverad"
+  },
+  "statusSnoozedUntil": {
+    "message": "Snoozad till $time$",
+    "placeholders": {
+      "time": {
+        "content": "$1"
+      }
+    }
+  },
+  "toggleStopSnooze": {
+    "message": "Stoppa snooze"
+  },
+  "toggleDisable": {
+    "message": "Inaktivera"
+  },
+  "toggleEnable": {
+    "message": "Aktivera"
+  },
+  "snoozeSectionHeading": {
+    "message": "Snooze"
+  }
+}

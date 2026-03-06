@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TabRevive – Keep Tabs Alive Settings</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #111111;
+            border-radius: 12px;
+            padding: 32px;
+            border: 1px solid #222222;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #222222;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #00ff88;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #888888;
+            font-size: 16px;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .setting-group {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .setting-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .setting-info {
+            flex: 1;
+        }
+
+        .setting-label {
+            font-size: 16px;
+            font-weight: 500;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .setting-description {
+            font-size: 14px;
+            color: #888888;
+            line-height: 1.4;
+        }
+
+        .setting-control {
+            flex-shrink: 0;
+            margin-left: 20px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: #333333;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #00ff88;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 22px;
+            height: 22px;
+            background: #ffffff;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(24px);
+        }
+
+        .number-input {
+            background: #2a2a2a;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #ffffff;
+            font-size: 14px;
+            width: 100px;
+            text-align: center;
+        }
+
+        .number-input:focus {
+            outline: none;
+            border-color: #00ff88;
+        }
+
+        .select-input {
+            background: #2a2a2a;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #ffffff;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .select-input:focus {
+            outline: none;
+            border-color: #00ff88;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #00ff88, #00ccff);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            color: #000000;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
+        }
+
+        .button.secondary {
+            background: #333333;
+            color: #ffffff;
+        }
+
+        .button.secondary:hover {
+            background: #444444;
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
+        }
+
+        .button.danger {
+            background: linear-gradient(135deg, #ff4757, #ff6b7a);
+            color: #ffffff;
+        }
+
+        .button.danger:hover {
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.3);
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 32px;
+            padding-top: 20px;
+            border-top: 1px solid #222222;
+        }
+
+        .warning {
+            background: #2a1f00;
+            border: 1px solid #ffa502;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .warning-title {
+            color: #ffa502;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .warning-text {
+            color: #cccccc;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stat-card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00ff88;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ TabRevive – Keep Tabs Alive Settings</h1>
+            <p>Configure advanced tab keep-alive settings and performance options</p>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🛡️ Core Features</h2>
+            
+            <div class="setting-group">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Aggressive Mode</div>
+                        <div class="setting-description">Use all available techniques to keep tabs active (recommended)</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch active" data-setting="aggressiveMode">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Enable Silent Audio</div>
+                        <div class="setting-description">Play silent audio to prevent tab suspension</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch active" data-setting="enableSilentAudio">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Heartbeat Monitoring</div>
+                        <div class="setting-description">Continuously monitor tab activity</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch active" data-setting="enableHeartbeat">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Heartbeat Interval</div>
+                        <div class="setting-description">How often to check tab activity (milliseconds)</div>
+                    </div>
+                    <div class="setting-control">
+                        <input type="number" class="number-input" min="1000" max="10000" step="500" value="2000" data-setting="heartbeatInterval">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📊 Performance & Monitoring</h2>
+            
+            <div class="setting-group">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Performance Monitoring</div>
+                        <div class="setting-description">Track memory usage and performance metrics</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch active" data-setting="enablePerformanceMonitoring">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Memory Monitoring</div>
+                        <div class="setting-description">Monitor and warn about high memory usage</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch active" data-setting="enableMemoryMonitoring">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Memory Warning Threshold</div>
+                        <div class="setting-description">Show warning when tab uses more than this amount (MB)</div>
+                    </div>
+                    <div class="setting-control">
+                        <input type="number" class="number-input" min="100" max="2000" step="50" value="500" data-setting="memoryWarningThreshold">
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Maximum Active Tabs</div>
+                        <div class="setting-description">Limit the number of simultaneously active tabs</div>
+                    </div>
+                    <div class="setting-control">
+                        <input type="number" class="number-input" min="1" max="50" step="1" value="10" data-setting="maxActiveTabs">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🔔 Notifications & Auto-Actions</h2>
+            
+            <div class="setting-group">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Enable Notifications</div>
+                        <div class="setting-description">Show notifications for important events</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch active" data-setting="enableNotifications">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Auto Refresh Tabs</div>
+                        <div class="setting-description">Automatically refresh active tabs periodically</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch" data-setting="autoRefresh">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Auto Refresh Interval</div>
+                        <div class="setting-description">How often to refresh active tabs (minutes)</div>
+                    </div>
+                    <div class="setting-control">
+                        <select class="select-input" data-setting="autoRefreshInterval">
+                            <option value="60000">1 minute</option>
+                            <option value="300000" selected>5 minutes</option>
+                            <option value="600000">10 minutes</option>
+                            <option value="1800000">30 minutes</option>
+                            <option value="3600000">1 hour</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Auto-Disable on Low Battery</div>
+                        <div class="setting-description">Automatically disable always active when battery is low</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch" data-setting="autoDisableOnLowBattery">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📈 Statistics</h2>
+            
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalActivations">0</div>
+                    <div class="stat-label">Total Activations</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="averageActiveTime">0m</div>
+                    <div class="stat-label">Average Active Time</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="currentActive">0</div>
+                    <div class="stat-label">Currently Active</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="extensionUptime">0h</div>
+                    <div class="stat-label">Extension Uptime</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">⚠️ Advanced</h2>
+            
+            <div class="warning">
+                <div class="warning-title">⚠️ Warning</div>
+                <div class="warning-text">
+                    These actions will affect all active tabs and cannot be undone easily.
+                    Make sure you understand the consequences before proceeding.
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Reset All Settings</div>
+                        <div class="setting-description">Restore all settings to their default values</div>
+                    </div>
+                    <div class="setting-control">
+                        <button class="button secondary" id="resetSettingsBtn">Reset Settings</button>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Clear All Data</div>
+                        <div class="setting-description">Remove all stored data including active tabs and statistics</div>
+                    </div>
+                    <div class="setting-control">
+                        <button class="button danger" id="clearDataBtn">Clear All Data</button>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Export Settings</div>
+                        <div class="setting-description">Download your current settings as a backup file</div>
+                    </div>
+                    <div class="setting-control">
+                        <button class="button secondary" id="exportSettingsBtn">Export</button>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Import Settings</div>
+                        <div class="setting-description">Load settings from a backup file</div>
+                    </div>
+                    <div class="setting-control">
+                        <input type="file" id="importFileInput" accept=".json" style="display: none;">
+                        <button class="button secondary" id="importSettingsBtn">Import</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="button" id="saveBtn">Save Settings</button>
+            <button class="button secondary" id="cancelBtn">Cancel</button>
+        </div>
+    </div>
+
+    <script src="settings.js"></script>
+</body>
+</html>

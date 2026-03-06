@@ -1,0 +1,55 @@
+{
+  "extensionName": {
+    "message": "Activa las pestañas nuevas"
+  },
+  "extensionShortName": {
+    "message": "PestañasActivas"
+  },
+  "extensionDescription": {
+    "message": "Lleva cada pestaña nueva al frente: enfoca automáticamente, evita aperturas en segundo plano y mantiene fluido el ritmo de navegación."
+  },
+  "actionTitle": {
+    "message": "Activa las pestañas nuevas: haz clic para alternar"
+  },
+  "toggleCommandDescription": {
+    "message": "Activa o desactiva Make New Tabs Active"
+  },
+  "snoozeCommandDescription": {
+    "message": "Pausar por los minutos guardados"
+  },
+  "snoozeButtonLabel": {
+    "message": "Posponer"
+  },
+  "snoozeMinutesSuffix": {
+    "message": "min"
+  },
+  "snoozeMinutesInputLabel": {
+    "message": "Minutos para posponer"
+  },
+  "statusDisabled": {
+    "message": "Desactivado"
+  },
+  "statusEnabled": {
+    "message": "Activado"
+  },
+  "statusSnoozedUntil": {
+    "message": "Pospuesto hasta las $time$",
+    "placeholders": {
+      "time": {
+        "content": "$1"
+      }
+    }
+  },
+  "toggleStopSnooze": {
+    "message": "Dejar de posponer"
+  },
+  "toggleDisable": {
+    "message": "Desactivar"
+  },
+  "toggleEnable": {
+    "message": "Activar"
+  },
+  "snoozeSectionHeading": {
+    "message": "Posponer"
+  }
+}

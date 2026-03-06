@@ -1,0 +1,55 @@
+{
+  "extensionName": {
+    "message": "Neue Tabs sofort aktiv"
+  },
+  "extensionShortName": {
+    "message": "TabsAktiv"
+  },
+  "extensionDescription": {
+    "message": "Bringt jeden neuen Tab nach vorne: fokussiert automatisch, verhindert Hintergrundöffnungen und hält deinen Flow aufrecht."
+  },
+  "actionTitle": {
+    "message": "Neue Tabs aktiv: zum Umschalten klicken"
+  },
+  "toggleCommandDescription": {
+    "message": "Make New Tabs Active ein- oder ausschalten"
+  },
+  "snoozeCommandDescription": {
+    "message": "Für gespeicherte Minuten pausieren"
+  },
+  "snoozeButtonLabel": {
+    "message": "Snooze"
+  },
+  "snoozeMinutesSuffix": {
+    "message": "Min"
+  },
+  "snoozeMinutesInputLabel": {
+    "message": "Minuten für Snooze"
+  },
+  "statusDisabled": {
+    "message": "Deaktiviert"
+  },
+  "statusEnabled": {
+    "message": "Aktiviert"
+  },
+  "statusSnoozedUntil": {
+    "message": "Pausiert bis $time$",
+    "placeholders": {
+      "time": {
+        "content": "$1"
+      }
+    }
+  },
+  "toggleStopSnooze": {
+    "message": "Snooze beenden"
+  },
+  "toggleDisable": {
+    "message": "Deaktivieren"
+  },
+  "toggleEnable": {
+    "message": "Aktivieren"
+  },
+  "snoozeSectionHeading": {
+    "message": "Snooze"
+  }
+}

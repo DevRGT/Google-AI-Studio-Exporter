@@ -1,0 +1,60 @@
+{
+   "action": {
+      "default_icon": {
+         "128": "icons/icon128.png",
+         "16": "icons/icon16.png",
+         "32": "icons/icon32.png",
+         "48": "icons/icon48.png"
+      },
+      "default_popup": "popup.html",
+      "default_title": "TabRevive – Keep Tabs Alive - Ultimate Tab Keep-Alive"
+   },
+   "author": "Aadit Aggarwal",
+   "background": {
+      "service_worker": "background.js",
+      "type": "module"
+   },
+   "commands": {
+      "disable-all-tabs": {
+         "description": "Disable always active for all tabs",
+         "suggested_key": {
+            "default": "Ctrl+Shift+D",
+            "mac": "Command+Shift+D"
+         }
+      },
+      "toggle-current-tab": {
+         "description": "Toggle always active for current tab",
+         "suggested_key": {
+            "default": "Ctrl+Shift+A",
+            "mac": "Command+Shift+A"
+         }
+      }
+   },
+   "content_scripts": [ {
+      "all_frames": true,
+      "js": [ "content.js" ],
+      "match_about_blank": true,
+      "matches": [ "\u003Call_urls>" ],
+      "run_at": "document_start"
+   } ],
+   "description": "Ultimate tab keep-alive extension with undetectable stealth mode and performance monitoring",
+   "homepage_url": "https://github.com/activetab-pro/extension",
+   "host_permissions": [ "\u003Call_urls>" ],
+   "icons": {
+      "128": "icons/icon128.png",
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+   },
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtEKodysNEEjwdZ4ptFXY6S0UZyOGWz12ZHw/pOQoy7KaNowMqYqVR/jiJZQEcpcJF7WrB8AeHwYGAh5CZygNc9Buum6cz4rj3gCu+U4tDup/gaDBXu1gCotFNB2lDE4qVaogvWTGWpA4E7YqCeX5IQCXc3hvugEY8rPm7gbESWGxSBAq6exxpkJ6qbHrbOldbpAXVmiayQSMoFuuv2rd1raLxPJo1f7Oc7J+gXHUWP+7K0rJbNcO7LV3cB3d0iITeHBvtQ0VHPUdmqLY6A6lZx737ZkTo41zXjFny39daWLNRtkkQQ9nMNfRIe3zFmLn+SG6tvPNgq86OXrtupENGQIDAQAB",
+   "manifest_version": 3,
+   "minimum_chrome_version": "88",
+   "name": "TabRevive – Keep Tabs Alive",
+   "permissions": [ "tabs", "activeTab", "storage", "scripting", "notifications" ],
+   "update_url": "https://clients2.google.com/service/update2/crx",
+   "version": "2.0.1",
+   "web_accessible_resources": [ {
+      "matches": [ "\u003Call_urls>" ],
+      "resources": [ "injected.js", "settings.html" ]
+   } ]
+}

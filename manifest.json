@@ -1,0 +1,46 @@
+{
+    "manifest_version": 3,
+    "name": "__MSG_extensionName__",
+    "version": "2.0.0",
+    "description": "__MSG_extensionDescription__",
+    "default_locale": "en",
+    "background": {
+        "service_worker": "background/service-worker.js",
+        "type": "module"
+    },
+    "action": {
+        "default_title": "Open Options",
+        "default_popup": "options/options.html"
+    },
+    "permissions": [
+        "storage",
+        "activeTab",
+        "scripting",
+        "downloads",
+        "offscreen"
+    ],
+    "host_permissions": [
+        "https://aistudio.google.com/*"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://aistudio.google.com/*"
+            ],
+            "js": [
+                "libs/jszip.min.js",
+                "utils/dom-capture.js",
+                "utils/attachment-handler.js",
+                "content/content.js"
+            ],
+            "css": [
+                "content/styles.css"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
+    "options_ui": {
+        "page": "options/options.html",
+        "open_in_tab": true
+    }
+}

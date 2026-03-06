@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TabRevive – Keep Tabs Alive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 420px;
+            min-height: 640px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 24px 24px 20px;
+            background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%);
+            border-bottom: 1px solid #222222;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #00ff88, #00ccff, #8844ff);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-icon {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #00ff88, #00ccff);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #000000;
+            font-weight: 900;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .header p {
+            font-size: 13px;
+            color: #888888;
+            font-weight: 400;
+            line-height: 1.4;
+        }
+
+        .status-bar {
+            background: #0f0f0f;
+            padding: 12px 24px;
+            border-bottom: 1px solid #222222;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff88;
+            animation: statusPulse 2s infinite;
+        }
+
+        .status-indicator.inactive {
+            background: #ff4757;
+            animation: none;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        .status-text {
+            font-size: 12px;
+            color: #cccccc;
+            font-weight: 500;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            padding: 20px 24px;
+            background: #0f0f0f;
+            border-bottom: 1px solid #222222;
+        }
+
+        .stat-card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #00ff88, #00ccff);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .stat-card:hover {
+            border-color: #333333;
+            background: #1e1e1e;
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-number {
+            font-size: 20px;
+            font-weight: 800;
+            color: #00ff88;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #666666;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .current-tab {
+            padding: 20px 24px;
+            background: #0a0a0a;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #cccccc;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-icon {
+            font-size: 16px;
+        }
+
+        .tab-card {
+            background: #161616;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-card:hover {
+            border-color: #333333;
+            background: #1a1a1a;
+        }
+
+        .tab-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .tab-favicon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: #333333;
+            flex-shrink: 0;
+        }
+
+        .tab-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .tab-title {
+            font-weight: 500;
+            font-size: 14px;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+
+        .tab-url {
+            font-size: 12px;
+            color: #666666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tab-meta {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 11px;
+            color: #666666;
+        }
+
+        .tab-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .toggle-button {
+            background: linear-gradient(135deg, #00ff88, #00ccff);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            color: #000000;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toggle-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .toggle-button:hover::before {
+            left: 100%;
+        }
+
+        .toggle-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
+        }
+
+        .toggle-button:active {
+            transform: translateY(0);
+        }
+
+        .toggle-button.active {
+            background: linear-gradient(135deg, #ff4757, #ff6b7a);
+            color: #ffffff;
+        }
+
+        .toggle-button.active:hover {
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.3);
+        }
+
+        .features-section {
+            padding: 20px 24px;
+            background: #0a0a0a;
+            border-top: 1px solid #222222;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .feature-button {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 12px;
+            color: #cccccc;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .feature-button:hover {
+            border-color: #333333;
+            background: #1e1e1e;
+            color: #ffffff;
+        }
+
+        .feature-icon {
+            font-size: 16px;
+        }
+
+        .active-tabs {
+            padding: 20px 24px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #0a0a0a;
+        }
+
+        .active-tab-item {
+            background: #161616;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+
+        .active-tab-item:hover {
+            border-color: #333333;
+            background: #1a1a1a;
+        }
+
+        .active-tab-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .activity-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #00ff88;
+            animation: activityPulse 2s infinite;
+            flex-shrink: 0;
+        }
+
+        .activity-indicator.inactive {
+            background: #666666;
+            animation: none;
+        }
+
+        @keyframes activityPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        .remove-button {
+            background: #333333;
+            border: none;
+            border-radius: 6px;
+            width: 28px;
+            height: 28px;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-button:hover {
+            background: #ff4757;
+            transform: scale(1.05);
+        }
+
+        .tab-favicon-small {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            background: #333333;
+            flex-shrink: 0;
+        }
+
+        .active-tab-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+
+        .active-tab-url {
+            font-size: 11px;
+            color: #666666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666666;
+        }
+
+        .empty-state-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.6;
+        }
+
+        .empty-state-text {
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .empty-state-subtext {
+            font-size: 11px;
+            color: #555555;
+        }
+
+        .footer {
+            padding: 16px 24px;
+            background: #111111;
+            border-top: 1px solid #222222;
+            text-align: center;
+        }
+
+        .footer-text {
+            font-size: 11px;
+            color: #666666;
+            line-height: 1.4;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333333;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444444;
+        }
+
+        .notification {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #00ff88;
+            color: #000000;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .performance-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: #666666;
+        }
+
+        .performance-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #00ff88;
+        }
+
+        .performance-dot.warning {
+            background: #ffa502;
+        }
+
+        .performance-dot.error {
+            background: #ff4757;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <div class="header-icon">⚡</div>
+            TabRevive – Keep Tabs Alive
+        </h1>
+        <p>Advanced tab keep-alive with performance monitoring</p>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-indicator" id="globalStatus"></div>
+        <div class="status-text" id="statusText">Extension Ready</div>
+        <div style="margin-left: auto;">
+            <div class="performance-indicator" id="performanceIndicator">
+                <div class="performance-dot" id="perfDot"></div>
+                <span id="perfText">Normal</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-number" id="activeCount">0</div>
+            <div class="stat-label">Active</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="totalTabs">0</div>
+            <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="uptime">0s</div>
+            <div class="stat-label">Uptime</div>
+        </div>
+    </div>
+
+    <div class="current-tab">
+        <div class="section-title">
+            <span class="section-icon">🎯</span>
+            Current Tab
+        </div>
+        <div class="tab-card" id="currentTabCard">
+            <div class="tab-info">
+                <img class="tab-favicon" id="currentFavicon" src="" alt="">
+                <div class="tab-details">
+                    <div class="tab-title" id="currentTitle">Loading...</div>
+                    <div class="tab-url" id="currentUrl">...</div>
+                </div>
+            </div>
+            <div class="tab-meta">
+                <div class="tab-meta-item">
+                    <span>📊</span>
+                    <span id="tabMemory">-</span>
+                </div>
+                <div class="tab-meta-item">
+                    <span>⏱️</span>
+                    <span id="tabAge">-</span>
+                </div>
+                <div class="tab-meta-item">
+                    <span>🔄</span>
+                    <span id="tabStatus">Loading</span>
+                </div>
+            </div>
+            <button class="toggle-button" id="toggleButton">Make Always Active</button>
+        </div>
+    </div>
+
+    <div class="features-section">
+        <div class="section-title">
+            <span class="section-icon">🛠️</span>
+            Quick Actions
+        </div>
+        <div class="feature-grid">
+            <button class="feature-button" id="refreshAllBtn">
+                <div class="feature-icon">🔄</div>
+                <div>Refresh Active</div>
+            </button>
+            <button class="feature-button" id="muteAllBtn">
+                <div class="feature-icon">🔇</div>
+                <div>Mute All</div>
+            </button>
+            <button class="feature-button" id="exportBtn">
+                <div class="feature-icon">📋</div>
+                <div>Export List</div>
+            </button>
+            <button class="feature-button" id="settingsBtn">
+                <div class="feature-icon">⚙️</div>
+                <div>Settings</div>
+            </button>
+        </div>
+    </div>
+
+    <div class="active-tabs">
+        <div class="section-title">
+            <span class="section-icon">⚡</span>
+            Active Tabs
+            <span style="margin-left: auto; font-size: 11px; color: #666666;" id="activeTabsCount">0</span>
+        </div>
+        <div id="activeTabsList">
+            <div class="empty-state">
+                <div class="empty-state-icon">●</div>
+                <div class="empty-state-text">No tabs are always active yet</div>
+                <div class="empty-state-subtext">Click "Make Always Active" to start</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-text">
+            Advanced keep-alive • Performance optimized • Battery efficient
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

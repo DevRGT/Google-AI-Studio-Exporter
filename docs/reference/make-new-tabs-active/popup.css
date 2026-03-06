@@ -1,0 +1,76 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  margin: 12px;
+  min-width: 220px;
+}
+
+h1 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}
+
+p {
+  margin: 0 0 0.75rem;
+}
+
+button {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.5rem;
+  padding: 0.5rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.snooze h2 {
+  font-size: 0.9rem;
+  margin: 0 0 0.35rem;
+}
+
+.snooze .controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.snooze input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.5rem;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.snooze input:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+
+.snooze #snooze {
+  flex: 0 0 50%;
+  width: auto;
+  margin: 0;
+}
+
+.snooze #snooze-min-label {
+  flex: 0 0 auto;
+  padding: 0 0.15rem;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
